@@ -1,0 +1,40 @@
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+
+// Load environment variables
+dotenv.config();
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(cookieParser());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Set View Engine for HTMX Admin Panel
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public'))); // For static assets like CSS/JS
+
+// Routes
+const authRoutes = require('./routes/authRoutes');
+const syncRoutes = require('./routes/syncRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/sync', syncRoutes);
+app.use('/admin', adminRoutes);
+
+app.get('/', (req, res) => {
+    res.send('Gold Estimation API is running...');
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});

@@ -1,0 +1,31 @@
+<!-- Edit Customer Form — loaded via HTMX GET /admin/customer/:id/edit-form -->
+<div class="flex justify-between items-center mb-5">
+    <h3 class="text-lg font-bold text-gray-800">Edit Customer</h3>
+    <button onclick="closeModal('edit-customer-modal')" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+</div>
+<form hx-post="/admin/customer/<%= customer.id %>/edit" hx-target="#customer-row-<%= customer.id %>" hx-swap="outerHTML"
+    hx-on::after-request="closeModal('edit-customer-modal'); showToast('Customer updated!')" class="space-y-4">
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Full Name <span
+                class="text-red-400">*</span></label>
+        <input type="text" name="name" value="<%= customer.name %>" required
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+    </div>
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Phone</label>
+        <input type="text" name="phone" value="<%= customer.phone || '' %>"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+    </div>
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Address</label>
+        <textarea name="address" rows="2"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400 resize-none"><%= customer.address || '' %></textarea>
+    </div>
+    <div class="flex gap-3 pt-1">
+        <button type="button" onclick="closeModal('edit-customer-modal')"
+            class="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Cancel</button>
+        <button type="submit"
+            class="flex-1 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg text-sm transition">Save
+            Changes</button>
+    </div>
+</form>

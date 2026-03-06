@@ -1,0 +1,45 @@
+<!-- Edit User Modal Content — loaded via HTMX GET /admin/user/:id/edit-form -->
+<div class="flex justify-between items-center mb-5">
+    <h3 class="text-lg font-bold text-gray-800">Edit User</h3>
+    <button onclick="closeModal('edit-user-modal')" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+</div>
+<form hx-post="/admin/user/<%= user.id %>/edit" hx-target="#user-row-<%= user.id %>" hx-swap="outerHTML"
+    hx-on::after-request="closeModal('edit-user-modal'); showToast('User updated!')" class="space-y-4">
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Full Name</label>
+            <input type="text" name="name" value="<%= user.name || '' %>"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+        <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Shop Name</label>
+            <input type="text" name="shop_name" value="<%= user.shop_name || '' %>"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Phone</label>
+            <input type="text" name="phone" value="<%= user.phone %>"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+        <div>
+            <label class="text-xs font-medium text-gray-600 block mb-1">Max Devices</label>
+            <input type="number" name="max_allowed_devices" value="<%= user.max_allowed_devices %>" min="1" max="20"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+    </div>
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">New Password <span class="text-gray-400">(leave
+                blank to keep current)</span></label>
+        <input type="password" name="password" placeholder="Enter new password"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-yellow-400">
+    </div>
+    <div class="flex gap-3 pt-1">
+        <button type="button" onclick="closeModal('edit-user-modal')"
+            class="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Cancel</button>
+        <button type="submit"
+            class="flex-1 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg text-sm transition">Save
+            Changes</button>
+    </div>
+</form>

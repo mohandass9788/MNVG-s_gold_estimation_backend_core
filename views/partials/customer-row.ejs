@@ -1,0 +1,29 @@
+<tr class="hover:bg-gray-50 text-sm transition" id="customer-row-<%= customer.id %>">
+    <td class="px-6 py-4 font-semibold text-gray-800">
+        <%= customer.name %>
+    </td>
+    <td class="px-6 py-4 text-gray-600">
+        <%= customer.phone || '—' %>
+    </td>
+    <td class="px-6 py-4 text-gray-500 max-w-xs truncate">
+        <%= customer.address || '—' %>
+    </td>
+    <td class="px-6 py-4">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+            <%= customer.total_visits || 0 %> visits
+        </span>
+    </td>
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-2">
+            <button onclick="openEditCustomer('<%= customer.id %>')"
+                class="text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg transition font-medium">
+                ✏️ Edit
+            </button>
+            <button hx-delete="/admin/customer/<%= customer.id %>" hx-target="#customer-row-<%= customer.id %>"
+                hx-swap="outerHTML" hx-confirm="Delete <%= customer.name %>?" data-toast="Customer deleted."
+                class="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-lg transition font-medium">
+                🗑 Delete
+            </button>
+        </div>
+    </td>
+</tr>

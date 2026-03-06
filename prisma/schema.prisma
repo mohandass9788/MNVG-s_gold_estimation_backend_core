@@ -1,0 +1,123 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model customer {
+  id           String  @id @db.VarChar(64)
+  local_id     String  @db.VarChar(128)
+  name         String  @db.VarChar(128)
+  phone        String  @db.VarChar(64)
+  address      String? @db.VarChar(255)
+  total_visits Int     @default(0)
+  userId       String  @db.VarChar(64)
+  user         user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Customer_userId_fkey")
+
+  @@unique([userId, local_id], map: "Customer_userId_local_id_key")
+  @@unique([userId, phone], map: "Customer_userId_phone_key")
+  @@index([userId], map: "Customer_userId_idx")
+}
+
+model employee {
+  id        String    @id @db.VarChar(64)
+  local_id  String    @db.VarChar(128)
+  name      String    @db.VarChar(128)
+  phone     String?   @db.VarChar(64)
+  role      String?   @db.VarChar(64)
+  salary    Float?
+  join_date DateTime?
+  userId    String    @db.VarChar(64)
+  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Employee_userId_fkey")
+
+  @@unique([userId, local_id], map: "Employee_userId_local_id_key")
+  @@index([userId], map: "Employee_userId_idx")
+}
+
+model estimation {
+  id             String    @id @db.VarChar(64)
+  local_id       String    @db.VarChar(128)
+  bill_no        Int?
+  customer_name  String?   @db.VarChar(128)
+  customer_phone String?   @db.VarChar(64)
+  total_amount   Float     @default(0)
+  items          Json?
+  date           DateTime? @default(now())
+  status         String?   @default("active") @db.VarChar(64)
+  userId         String    @db.VarChar(64)
+  user           user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Estimation_userId_fkey")
+
+  @@unique([userId, local_id], map: "Estimation_userId_local_id_key")
+  @@index([userId], map: "Estimation_userId_idx")
+}
+
+model purchase {
+  id             String    @id @db.VarChar(64)
+  local_id       String    @db.VarChar(128)
+  bill_no        Int?
+  customer_name  String?   @db.VarChar(128)
+  customer_phone String?   @db.VarChar(64)
+  total_amount   Float     @default(0)
+  items          Json?
+  date           DateTime? @default(now())
+  userId         String    @db.VarChar(64)
+  user           user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Purchase_userId_fkey")
+
+  @@unique([userId, local_id], map: "Purchase_userId_local_id_key")
+  @@index([userId], map: "Purchase_userId_idx")
+}
+
+model repair {
+  id             String    @id @db.VarChar(64)
+  local_id       String    @db.VarChar(128)
+  receipt_no     Int?
+  customer_name  String?   @db.VarChar(128)
+  customer_phone String?   @db.VarChar(64)
+  item_desc      String?   @db.VarChar(255)
+  estimated_cost Float     @default(0)
+  advance_paid   Float     @default(0)
+  status         String?   @default("pending") @db.VarChar(64)
+  date           DateTime? @default(now())
+  userId         String    @db.VarChar(64)
+  user           user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Repair_userId_fkey")
+
+  @@unique([userId, local_id], map: "Repair_userId_local_id_key")
+  @@index([userId], map: "Repair_userId_idx")
+}
+
+model session {
+  id          String    @id @db.VarChar(64)
+  token       String    @unique(map: "token") @db.VarChar(255)
+  device_id   String?   @db.VarChar(128)
+  device_name String?   @db.VarChar(128)
+  login_time  DateTime? @default(now())
+  last_active DateTime
+  userId      String    @db.VarChar(64)
+  user        user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
+
+  @@index([userId], map: "Session_userId_idx")
+}
+
+model user {
+  id                      String       @id @db.VarChar(64)
+  phone                   String       @unique(map: "phone") @db.VarChar(64)
+  password                String       @db.VarChar(255)
+  name                    String?      @db.VarChar(128)
+  shop_name               String?      @db.VarChar(128)
+  role                    String?      @default("customer") @db.VarChar(64)
+  max_allowed_devices     Int?         @default(4)
+  subscription_valid_upto DateTime?
+  is_trial                Boolean?     @default(true)
+  created_at              DateTime?    @default(now())
+  updated_at              DateTime?
+  customer                customer[]
+  employee                employee[]
+  estimation              estimation[]
+  purchase                purchase[]
+  repair                  repair[]
+  session                 session[]
+}
