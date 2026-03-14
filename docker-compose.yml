@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=mysql://root:NeXooA!_2025@mysql_container:3306/mnv_groups_gold_estimation
       - PORT=3000
       - JWT_SECRET=mnv_gold_secret_key_12345
+      - CORS_ORIGIN=https://api.estimate.mnvgroups.in,http://localhost:3000
     depends_on:
       mysql_container:
         condition: service_healthy

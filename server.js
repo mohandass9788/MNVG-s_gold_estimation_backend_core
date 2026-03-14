@@ -10,7 +10,13 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

@@ -10,8 +10,8 @@ const options = {
         },
         servers: [
             {
-                url: 'http://localhost:3000',
-                description: 'Local Build Server',
+                url: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:3000',
+                description: 'API Server',
             },
         ],
         components: {
