@@ -29,7 +29,7 @@ async function seed() {
             password: hashed,
             name: 'Super Admin',
             shop_name: 'MNV Groups',
-            role: 'admin',
+            role: 'super_admin',
             max_allowed_devices: 10,
             is_trial: false,
         }

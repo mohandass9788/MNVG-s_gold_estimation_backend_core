@@ -3,12 +3,68 @@ const router = express.Router();
 const syncController = require('../controllers/syncController');
 const { verifyToken, checkSubscription } = require('../middlewares/authMiddleware');
 
-// Receive data from local SQLite and save to MySQL
-// Requires active subscription (POST request)
+/**
+ * @swagger
+ * tags:
+ *   name: Sync
+ *   description: Offline-First Data Synchronization
+ */
+
+/**
+ * @swagger
+ * /api/sync/push:
+ *   post:
+ *     summary: Push offline data from mobile app to cloud database
+ *     description: Upserts multiple entity arrays inside a single database transaction. Requires active subscription.
+ *     tags: [Sync]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               estimations:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               purchases:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               repairs:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               customers:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Sync Successful with processed record counts
+ *       403:
+ *         description: Subscription Expired (Read-Only Mode)
+ */
 router.post('/push', verifyToken, checkSubscription, syncController.pushData);
 
-// Send data down to App for initial sync / restore
-// Allowed even in read-only mode (GET request)
-router.post('/pull', verifyToken, syncController.pullData); // Still needs verify, but checkSubscription logic is built for 'GET', since we need to send JSON payload for pull we use POST
+/**
+ * @swagger
+ * /api/sync/pull:
+ *   post:
+ *     summary: Pull all user data from cloud to mobile app
+ *     description: Fetches all remote records associated with the user account. Works even if subscription is expired (Read-Only).
+ *     tags: [Sync]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Backup data retrieved successfully
+ *       401:
+ *         description: Unauthorized (Invalid Token)
+ */
+router.post('/pull', verifyToken, syncController.pullData);
 
 module.exports = router;

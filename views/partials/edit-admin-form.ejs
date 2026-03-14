@@ -1,0 +1,25 @@
+<div class="flex justify-between items-center mb-5">
+    <h3 class="text-lg font-bold text-gray-800">Edit Admin: <%= user.name %></h3>
+    <button onclick="closeModal('edit-admin-modal')" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+</div>
+<form hx-post="/admin/admins/<%= user.id %>/edit" hx-target="#admin-row-<%= user.id %>" hx-swap="outerHTML"
+    hx-on::after-request="closeModal('edit-admin-modal'); showToast('Admin updated!')" class="space-y-4">
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Full Name</label>
+        <input type="text" name="name" value="<%= user.name %>" required class="input-field">
+    </div>
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">Phone</label>
+        <input type="text" name="phone" value="<%= user.phone %>" required class="input-field">
+    </div>
+    <div>
+        <label class="text-xs font-medium text-gray-600 block mb-1">New Password (leave blank to keep current)</label>
+        <input type="password" name="password" placeholder="••••••••" class="input-field">
+    </div>
+    <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('edit-admin-modal')"
+            class="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Cancel</button>
+        <button type="submit"
+            class="flex-1 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg text-sm transition">Save Changes</button>
+    </div>
+</form>

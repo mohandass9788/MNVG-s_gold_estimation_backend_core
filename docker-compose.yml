@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:NeXooA!_2025@mysql_container:3306/mnv_groups_gold_estimation
+      - PORT=3000
+      - JWT_SECRET=mnv_gold_secret_key_12345
+    depends_on:
+      mysql_container:
+        condition: service_healthy
+
+  mysql_container:
+    image: mysql:8.0
+    container_name: mysql_container
+    restart: always
+    environment:
+      - MYSQL_DATABASE=mnv_groups_gold_estimation
+      - MYSQL_ROOT_PASSWORD=NeXooA!_2025
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pNeXooA!_2025"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:

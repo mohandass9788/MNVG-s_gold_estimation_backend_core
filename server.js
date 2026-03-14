@@ -24,6 +24,11 @@ app.use(express.static(path.join(__dirname, 'public'))); // For static assets li
 const authRoutes = require('./routes/authRoutes');
 const syncRoutes = require('./routes/syncRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+
+// Swagger Documentation Point
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
