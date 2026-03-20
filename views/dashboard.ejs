@@ -1,273 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
+<%- include('partials/head', { title: 'Admin Dashboard — Gold Estimation' }) %>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard — Gold Estimation</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+<body class="bg-gray-50 flex h-screen overflow-hidden sidebar-open" hx-boost="true">
 
-        [hx-indicator] {
-            opacity: 0.6;
-            pointer-events: none;
-        }
+    <%- include('partials/sidebar') %>
 
-        /* Modal */
-        #modal-overlay {
-            display: none;
-        }
-
-        #modal-overlay.open {
-            display: flex;
-        }
-
-        /* Toast */
-        #toast {
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-        }
-
-        #toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    </style>
-</head>
-
-<body class="bg-gray-100 flex h-screen overflow-hidden">
-
-    <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
-    <aside class="w-64 bg-gray-900 flex flex-col flex-shrink-0">
-        <div class="h-16 flex items-center gap-3 px-6 border-b border-white/10">
-            <span class="text-2xl">💎</span>
-            <div>
-                <p class="text-white font-bold text-sm leading-none">Gold Admin</p>
-                <p class="text-gray-500 text-xs">MNV Groups</p>
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 glass sticky top-0 z-30 flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100/50 hover:bg-gray-200 transition-colors text-xl">☰</button>
+                <div class="md:hidden w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-xl shadow-lg">💎</div>
+                <h2 class="text-lg font-bold text-gray-800 tracking-tight">Admin <span class="text-yellow-500">Dashboard</span></h2>
             </div>
-        </div>
-        <nav class="flex-1 p-4 space-y-1">
-            <a href="/admin"
-                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-yellow-400 bg-yellow-400/10 text-sm font-medium">
-                <span>🏠</span> Dashboard
-            </a>
-            <% if (admin.role === 'super_admin') { %>
-            <a href="/admin/admins"
-                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 text-sm font-medium transition">
-                <span>🛡️</span> Admins
-            </a>
-            <% } %>
-        </nav>
-        <div class="p-4 border-t border-white/10">
-            <div class="flex items-center gap-3 mb-3">
-                <div
-                    class="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-sm font-bold text-gray-900">
-                    <%= admin.role === 'super_admin' ? 'SA' : 'A' %></div>
-                <div>
-                    <p class="text-white text-xs font-medium"><%= admin.role === 'super_admin' ? 'Super Admin' : 'Admin' %></p>
-                    <p class="text-gray-500 text-xs">
-                        <%= admin.phone %>
-                    </p>
-                </div>
-            </div>
-            <a href="/admin/logout" class="flex items-center gap-2 text-red-400 hover:text-red-300 text-xs transition">
-                <span>🚪</span> Logout
-            </a>
-        </div>
-    </aside>
-
-    <!-- ── MAIN ──────────────────────────────────────────────────── -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-
-        <!-- Topbar -->
-        <header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 flex-shrink-0">
-            <h2 class="text-lg font-bold text-gray-800">Dashboard</h2>
             <button onclick="openModal('add-user-modal')"
-                class="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold text-sm px-4 py-2 rounded-lg transition shadow-sm">
-                <span>+</span> Add User
+                class="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold text-sm px-4 py-2 rounded-xl transition shadow-sm h-10">
+                <span>+</span> <span class="hidden md:inline">Add User</span>
             </button>
         </header>
 
         <!-- Main Body -->
-        <main class="p-6 flex-1 overflow-auto">
+        <main class="p-4 md:p-6 flex-1 overflow-auto space-y-6 custom-scrollbar">
 
             <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
-                <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-2xl">👥</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-2xl">👥</div>
                     <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Users</p>
-                        <p class="text-2xl font-bold text-gray-800">
-                            <%= usersCount %>
-                        </p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total Users</p>
+                        <p class="text-2xl font-black text-gray-800"><%= usersCount %></p>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-2xl">📱</div>
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-2xl">📱</div>
                     <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Active Devices</p>
-                        <p class="text-2xl font-bold text-gray-800">
-                            <%= activeSessions %>
-                        </p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Live Devices</p>
+                        <p class="text-2xl font-black text-gray-800"><%= activeSessions %></p>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div class="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center text-2xl">⏱</div>
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center text-2xl">⚡️</div>
                     <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">On Trial</p>
-                        <p class="text-2xl font-bold text-gray-800">
-                            <%= trialCount %>
-                        </p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">On Trial</p>
+                        <p class="text-2xl font-black text-gray-800"><%= trialCount %></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Users Table -->
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="font-bold text-gray-800">Shop Owners</h3>
-                    <span class="text-xs text-gray-400">
-                        <%= users.length %> users
-                    </span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
-                            <tr>
-                                <th class="px-6 py-3 font-semibold">Name / Shop</th>
-                                <th class="px-6 py-3 font-semibold">Phone</th>
-                                <th class="px-6 py-3 font-semibold">Subscription</th>
-                                <th class="px-6 py-3 font-semibold">Max Devices</th>
-                                <th class="px-6 py-3 font-semibold">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50" id="user-list">
-                            <% users.forEach(user=> { %>
-                                <%- include('partials/user-row', { user }) %>
-                                    <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-                <% if (users.length===0) { %>
-                    <div class="text-center py-12 text-gray-400">No users yet. Click "+ Add User" to create one.</div>
+            <!-- Dashboard Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <!-- Main Content: Shop Owners Cards -->
+                <div class="lg:col-span-3 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Shop Owners</h3>
+                            <p class="text-xs text-gray-400 font-medium">Manage registrations and check sync status</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm text-[10px] font-black text-gray-500 uppercase tracking-tighter">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            <%= users.length %> Total
+                        </div>
+                    </div>
+
+                    <!-- User Cards Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="user-list">
+                        <% users.forEach(user => { %>
+                            <%- include('partials/user-card', { user }) %>
+                        <% }) %>
+                    </div>
+
+                    <% if (users.length === 0) { %>
+                        <div class="bg-white rounded-3xl border-2 border-dashed border-gray-100 py-20 text-center">
+                            <div class="text-4xl mb-4">🏪</div>
+                            <p class="text-gray-400 text-sm font-medium">No shops registered yet.</p>
+                        </div>
                     <% } %>
+                </div>
+
+                <!-- Sidebar Content: Active Sessions -->
+                <div class="lg:col-span-1 border-gray-100 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-gray-800">Live Feed</h3>
+                        <span class="text-[10px] font-black text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full uppercase">Realtime</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <% Object.keys(groupedSessions).forEach(shop => { %>
+                            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                <div class="bg-gray-50/50 px-4 py-2.5 border-b border-gray-100 flex justify-between items-center">
+                                    <span class="text-[10px] font-black text-gray-800 truncate uppercase tracking-tight"><%= shop %></span>
+                                    <span class="bg-green-50 text-green-600 text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                                        <span class="w-1 h-1 bg-green-500 rounded-full"></span> <%= groupedSessions[shop].length %>
+                                    </span>
+                                </div>
+                                <div class="p-3 space-y-3">
+                                    <% groupedSessions[shop].forEach(session => { %>
+                                        <div class="flex items-start gap-3">
+                                            <div class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-lg">📱</div>
+                                            <div class="flex-1 overflow-hidden">
+                                                <p class="text-[11px] font-bold text-gray-800 truncate"><%= session.device_name || 'Device' %></p>
+                                                <p class="text-[9px] text-gray-400 truncate"><%= session.user.name %></p>
+                                                <p class="text-[9px] text-yellow-600 font-black mt-1 uppercase">
+                                                    <%= new Date(session.last_active).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% }) %>
+                        <% if (Object.keys(groupedSessions).length === 0) { %>
+                            <div class="text-center py-10 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                                <p class="text-xs text-gray-400 font-medium italic">No active sessions</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- ── ADD USER MODAL ────────────────────────────────────────── -->
-    <div id="add-user-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+    <!-- ADD USER MODAL -->
+    <div id="add-user-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300"
         onclick="closeModalOnBg(event, 'add-user-modal')">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-bold text-gray-800">Add New User</h3>
-                <button onclick="closeModal('add-user-modal')"
-                    class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform" onclick="event.stopPropagation()">
+            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-lg font-black text-gray-800 uppercase tracking-tight">Add New Shop Owner</h3>
+                <button onclick="closeModal('add-user-modal')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors text-gray-400">✕</button>
             </div>
             <form hx-post="/admin/user/add" hx-target="#user-list" hx-swap="afterbegin"
-                hx-on::after-request="closeModal('add-user-modal'); showToast('User added!')" class="space-y-4">
+                hx-on::after-request="closeModal('add-user-modal')" 
+                data-toast="Shop owner added successfully!"
+                class="p-6 space-y-5">
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-medium text-gray-600 block mb-1">Full Name</label>
-                        <input type="text" name="name" required placeholder="Shop owner name" class="input-field">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Owner Name</label>
+                        <input type="text" name="name" required placeholder="Full Name" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
                     </div>
-                    <div>
-                        <label class="text-xs font-medium text-gray-600 block mb-1">Shop Name</label>
-                        <input type="text" name="shop_name" placeholder="Shop name" class="input-field">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Shop Name</label>
+                        <input type="text" name="shop_name" placeholder="Business Name" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-medium text-gray-600 block mb-1">Phone <span
-                                class="text-red-400">*</span></label>
-                        <input type="text" name="phone" required placeholder="Mobile number" class="input-field">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
+                        <input type="text" name="phone" required placeholder="978833xxxx" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
                     </div>
-                    <div>
-                        <label class="text-xs font-medium text-gray-600 block mb-1">Password</label>
-                        <input type="text" name="password" placeholder="Default: Welcome@123" class="input-field">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Initial Password</label>
+                        <input type="text" name="password" placeholder="Welcome@123" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-xs font-medium text-gray-600 block mb-1">Max Devices</label>
-                        <input type="number" name="max_allowed_devices" value="4" min="1" max="20" class="input-field">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Device Limit</label>
+                        <input type="number" name="max_allowed_devices" value="1" min="1" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
                     </div>
-                    <div>
-                        <label class="text-xs font-medium text-gray-600 block mb-1">Trial Days</label>
-                        <input type="number" name="trial_days" value="7" min="1" class="input-field">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Trial Period (Days)</label>
+                        <input type="number" name="trial_days" value="7" min="1" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
                     </div>
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeModal('add-user-modal')"
-                        class="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Cancel</button>
+                        class="flex-1 py-3.5 border border-gray-200 text-gray-600 rounded-2xl text-xs font-bold hover:bg-gray-50 transition-colors uppercase tracking-widest">Cancel</button>
                     <button type="submit"
-                        class="flex-1 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg text-sm transition">Add
-                        User</button>
+                        class="flex-1 py-3.5 bg-yellow-400 shadow-xl shadow-yellow-200 hover:bg-yellow-500 text-gray-900 font-black rounded-2xl text-xs transition-transform active:scale-95 uppercase tracking-widest">Register Shop</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ── EDIT USER MODAL (dynamic content via HTMX) ───────────── -->
-    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+    <!-- EDIT USER MODAL -->
+    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300"
         onclick="closeModalOnBg(event, 'edit-user-modal')">
-        <div id="edit-modal-content" class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6"
-            onclick="event.stopPropagation()">
-            <!-- loaded by HTMX -->
+        <div id="edit-modal-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform" onclick="event.stopPropagation()">
+            <!-- Loaded via HTMX -->
         </div>
     </div>
 
-    <!-- ── TOAST ─────────────────────────────────────────────────── -->
-    <div id="toast"
-        class="fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-5 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2">
-        <span>✅</span> <span id="toast-msg">Done!</span>
-    </div>
+    <%- include('partials/bottom-nav') %>
+    <%- include('partials/toast') %>
 
-    <style>
-        .input-field {
-            width: 100%;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-
-        .input-field:focus {
-            border-color: #fbbf24;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
-        }
-    </style>
     <script>
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function closeModalOnBg(e, id) { if (e.target === e.currentTarget) closeModal(id); }
 
         function openEditModal(userId) {
-            openModal('edit-user-modal');
+            document.getElementById('edit-user-modal').classList.remove('hidden');
             htmx.ajax('GET', `/admin/user/${userId}/edit-form`, { target: '#edit-modal-content' });
         }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
-
-        // Show toast on any HTMX success
-        document.body.addEventListener('htmx:afterRequest', (e) => {
-            if (e.detail.successful && e.detail.elt.dataset.toast) {
-                showToast(e.detail.elt.dataset.toast);
-            }
-        });
     </script>
 </body>
 

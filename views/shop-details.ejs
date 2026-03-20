@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', { title: user.shop_name + ' | Admin Details' }) %>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden sidebar-open" hx-boost="true">
+
+    <%- include('partials/sidebar') %>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 glass sticky top-0 z-30 flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100/50 hover:bg-gray-200 transition-colors text-xl">☰</button>
+                <a href="/admin" class="text-gray-400 hover:text-gray-800 transition-colors text-lg">←</a>
+                <div class="h-5 w-px bg-gray-200"></div>
+                <h2 class="text-base font-bold text-gray-800 tracking-tight truncate"><%= user.shop_name %> <span class="hidden md:inline text-gray-400 font-medium ml-1">Profile</span></h2>
+            </div>
+            <div class="hidden md:flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                ID: <%= user.id.substring(0,8) %>
+            </div>
+        </header>
+
+        <main class="p-4 md:p-6 flex-1 overflow-auto space-y-6 custom-scrollbar">
+
+            <!-- Profile Overview (Moved from Header) -->
+            <section class="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="w-16 h-16 bg-yellow-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-yellow-100 italic font-black text-gray-900">
+                        <%= user.shop_name.substring(0,1).toUpperCase() %>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400 font-medium tracking-tight">Registered <%= new Date(user.created_at).toLocaleDateString() %></p>
+                        <!-- Credentials Section -->
+                        <div class="mt-2 flex items-center gap-3 bg-gray-50/50 p-2.5 rounded-2xl border border-gray-100 max-w-fit">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Login Credentials</span>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-[11px] font-black text-gray-900 font-mono tracking-tighter transition-all blur-[5px]" id="credential-text">
+                                        P: <%= user.phone %> <span class="mx-1">•</span> KEY: <%= user.plain_password || '********' %>
+                                    </p>
+                                </div>
+                            </div>
+                            <button onclick="toggleCredentials()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-100 shadow-sm hover:border-yellow-400 transition-all text-xs" title="View Credentials">👁️</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <script>
+                    function toggleCredentials() {
+                        const el = document.getElementById('credential-text');
+                        el.classList.toggle('blur-[5px]');
+                    }
+                </script>
+                
+                <div class="flex items-center gap-3">
+                    <!-- Status Toggle -->
+                    <div hx-post="/admin/user/<%= user.id %>/toggle-active" hx-target="#status-badge-container" class="cursor-pointer group">
+                        <div id="status-badge-container">
+                            <span class="px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-2 transition-all <%= user.is_active ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100' %>">
+                                <%= user.is_active ? '✅' : '🚫' %>
+                                <span class="uppercase tracking-widest"><%= user.is_active ? 'Active' : 'Deactivated' %></span>
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Edit Button -->
+                    <button onclick="openEditModal('<%= user.id %>')" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white font-black text-xs px-5 py-3 rounded-2xl transition-all active:scale-95 shadow-xl shadow-gray-200 uppercase tracking-widest">
+                        ✏️ Edit Profile
+                    </button>
+                </div>
+            </section>
+
+            <!-- Content Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left: Stats & Features -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <a href="/admin/user/<%= user.id %>/customers" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:border-yellow-400 transition group text-center block">
+                            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Customers</p>
+                            <p class="text-2xl font-black text-gray-800 group-hover:text-yellow-600"><%= user._count.customer %></p>
+                        </a>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Estimations</p>
+                            <p class="text-2xl font-black text-gray-800"><%= user._count.estimation %></p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center text-yellow-600">
+                            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Purchases</p>
+                            <p class="text-2xl font-black"><%= user._count.purchase %></p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center text-blue-600">
+                            <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Repairs</p>
+                            <p class="text-2xl font-black"><%= user._count.repair %></p>
+                        </div>
+                    </div>
+
+                    <!-- Feature Access -->
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-black text-gray-800 uppercase tracking-widest text-xs">Mobile Feature Permissions</h3>
+                            <div id="feature-status"></div>
+                        </div>
+                        <form hx-post="/admin/user/<%= user.id %>/features" hx-target="#feature-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <% 
+                                const features = [
+                                    { id: 'chit', label: 'Chit Records', value: user.feature_chit },
+                                    { id: 'purchase', label: 'Gold Purchase', value: user.feature_purchase },
+                                    { id: 'estimation', label: 'Digital Estimation', value: user.feature_estimation },
+                                    { id: 'advance_chit', label: 'Advance Entries', value: user.feature_advance_chit },
+                                    { id: 'repair', label: 'Repair Tracking', value: user.feature_repair }
+                                ];
+                            %>
+                            <% features.forEach(f => { %>
+                                <label class="flex items-center gap-3 cursor-pointer group p-3 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                    <div class="relative inline-flex items-center">
+                                        <input type="checkbox" name="<%= f.id %>" <%= f.value ? 'checked' : '' %> class="sr-only peer">
+                                        <div class="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-600 group-hover:text-gray-900 transition"><%= f.label %></span>
+                                </label>
+                            <% }) %>
+                            <div class="md:col-span-2 lg:col-span-3 pt-4 border-t border-gray-50 flex justify-end">
+                                <button type="submit" class="bg-gray-800 text-white text-[10px] font-black px-6 py-2.5 rounded-xl hover:bg-black transition-all active:scale-95 uppercase tracking-widest">Update Permissions</button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- Device slots -->
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
+                            <h3 class="font-black text-gray-800 uppercase tracking-widest text-xs">Linked Hardware</h3>
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest" id="device-slots-status">
+                                <%= user.session.length %> / <%= user.max_allowed_devices %> USED
+                            </span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-50/50 text-gray-400 text-[10px] uppercase font-black border-b border-gray-100">
+                                    <tr>
+                                        <th class="px-6 py-4">Device</th>
+                                        <th class="px-6 py-4">Hardware Link</th>
+                                        <th class="px-6 py-4">Session Activity</th>
+                                        <th class="px-6 py-4">Kill</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    <% user.session.forEach(session => { %>
+                                        <tr class="hover:bg-gray-50/50 transition">
+                                            <td class="px-6 py-4 font-black text-gray-700 uppercase tracking-tighter italic">📱 <%= session.device_name %></td>
+                                            <td class="px-6 py-4 text-[10px] font-mono text-gray-400"><%= session.device_id || 'N/A' %></td>
+                                            <td class="px-6 py-4 text-gray-500 font-medium tracking-tight"><%= new Date(session.last_active).toLocaleString() %></td>
+                                            <td class="px-6 py-4">
+                                                <button hx-delete="/admin/session/<%= session.id %>" hx-confirm="Remote logout this device?" hx-swap="delete" hx-target="closest tr" class="w-8 h-8 rounded-full hover:bg-red-50 text-red-400 transition-colors">✕</button>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right: Control Panel (Extend/Devices/Reset) -->
+                <div class="lg:col-span-1 space-y-6">
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-8">
+                        
+                        <!-- Subscription Control -->
+                        <div class="space-y-6">
+                            <% 
+                                const expDate = user.subscription_valid_upto ? new Date(user.subscription_valid_upto) : null;
+                                const isExpired = !expDate || expDate < new Date();
+                            %>
+                            <div class="text-center py-5 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner" id="sub-validity-status">
+                                <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Validity Expires On</p>
+                                <p class="text-lg font-black <%= isExpired ? 'text-red-500' : 'text-green-600' %>">
+                                    <%= expDate ? expDate.toLocaleDateString('en-IN', { dateStyle: 'long' }) : 'EXPIRED' %>
+                                </p>
+                                <span class="inline-block mt-2 px-4 py-1.5 bg-white rounded-full text-[9px] font-black border border-gray-100 shadow-sm uppercase tracking-widest">
+                                    <%= user.is_trial ? '✨ Trial Mode' : '💎 Paid Member' %>
+                                </span>
+                            </div>
+
+                            <form hx-post="/admin/user/<%= user.id %>/extend" hx-swap="none" class="space-y-4">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="number" name="duration" value="1" min="1" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-yellow-400 outline-none">
+                                    <select name="unit" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-yellow-400 outline-none">
+                                        <option value="months">Months</option>
+                                        <option value="days">Days</option>
+                                        <option value="years">Years</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-[11px] py-3.5 rounded-2xl shadow-xl shadow-green-100 transition-all active:scale-95 uppercase tracking-widest">Update Validity</button>
+                            </form>
+                        </div>
+
+                        <!-- Hardware Limit -->
+                        <form hx-post="/admin/user/<%= user.id %>/devices" hx-swap="none" class="pt-8 border-t border-gray-100 flex flex-col gap-4">
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 text-center">Update Slot Capacity</label>
+                            <div class="flex gap-2">
+                                <input type="number" name="max_allowed_devices" value="<%= user.max_allowed_devices %>" min="1" class="flex-1 bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-yellow-400 outline-none">
+                                <button type="submit" class="bg-gray-800 hover:bg-black text-white font-black text-xs px-6 py-3 rounded-xl transition-all active:scale-95 uppercase tracking-widest">Set</button>
+                            </div>
+                        </form>
+
+                        <!-- Panic/Emergency Reset -->
+                        <div class="pt-8 border-t border-gray-100 space-y-4">
+                            <div class="flex justify-between items-center px-1">
+                                <label class="text-[10px] font-black text-red-400 uppercase tracking-widest">Emergency Access</label>
+                                <span class="text-[10px] font-bold text-gray-300 italic"><%= new Date().getDate().toString().padStart(2, '0') %><%= (new Date().getMonth() + 1).toString().padStart(2, '0') %></span>
+                            </div>
+                            <form hx-post="/admin/user/<%= user.id %>/reset-password" hx-target="find .reset-status" hx-swap="innerHTML" class="space-y-3">
+                                <div class="reset-status"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" name="new_password" placeholder="Today's Code" class="flex-1 bg-red-50/50 border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-red-400 outline-none text-red-900 placeholder-red-200">
+                                    <button type="submit" hx-confirm="Confirm Password Reset?" class="bg-red-500 hover:bg-red-600 shadow-xl shadow-red-100 text-white font-black text-[10px] px-4 py-3 rounded-xl transition-all active:scale-95 uppercase tracking-widest">Reset</button>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300" onclick="closeModalOnBg(event, 'edit-user-modal')">
+        <div id="edit-modal-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <%- include('partials/bottom-nav') %>
+    <%- include('partials/toast') %>
+
+    <script>
+        function openEditModal(userId) {
+            document.getElementById('edit-user-modal').classList.remove('hidden');
+            htmx.ajax('GET', `/admin/user/${userId}/edit-form`, { target: '#edit-modal-content' });
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function closeModalOnBg(e, id) { if (e.target === e.currentTarget) closeModal(id); }
+    </script>
+</body>
+
+</html>

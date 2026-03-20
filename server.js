@@ -30,6 +30,8 @@ app.use(express.static(path.join(__dirname, 'public'))); // For static assets li
 const authRoutes = require('./routes/authRoutes');
 const syncRoutes = require('./routes/syncRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const itemRoutes = require('./routes/itemRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
 
@@ -38,6 +40,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/item', itemRoutes);
+app.use('/api/public', publicRoutes);
 app.use('/admin', adminRoutes);
 
 app.get('/', (req, res) => {

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', { title: 'App Configuration — MNVG Gold' }) %>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden sidebar-open" hx-boost="true">
+
+    <%- include('partials/sidebar') %>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 glass sticky top-0 z-30 flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100/50 hover:bg-gray-200 transition-colors text-xl">☰</button>
+                <a href="/admin" class="text-gray-400 hover:text-gray-800 transition-colors">🏠</a>
+                <h2 class="text-lg font-bold text-gray-800 tracking-tight">System <span class="text-yellow-500">Settings</span></h2>
+            </div>
+            <div class="hidden md:block text-[10px] font-black text-gray-400 uppercase tracking-[.2em]">Global Rules</div>
+        </header>
+
+        <main class="p-4 md:p-6 flex-1 overflow-auto space-y-6 custom-scrollbar">
+            
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- Config Card -->
+                <section class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="px-8 py-6 border-b border-gray-100 bg-gray-50/30">
+                        <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">Public App Configuration</h3>
+                        <p class="text-xs text-gray-400 mt-1">These settings affect what all users see on the mobile app public screen.</p>
+                    </div>
+                    
+                    <form hx-post="/admin/config" hx-swap="none" data-toast="Settings updated successfully!" class="p-8 space-y-8">
+                        
+                        <!-- Contact Details -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="space-y-4">
+                                <h4 class="text-[10px] font-black text-yellow-600 uppercase tracking-widest border-l-4 border-yellow-400 pl-3 ml-1">Contact Channels</h4>
+                                
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Support Phone</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">📞</span>
+                                        <input type="text" name="phone" value="<%= config.phone %>" class="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">WhatsApp URL</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">💬</span>
+                                        <input type="text" name="whatsapp" value="<%= config.whatsapp %>" class="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Support Email</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 opacity-40">📧</span>
+                                        <input type="email" name="email" value="<%= config.email %>" class="w-full bg-gray-50 border-none rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Demo / Maintenance -->
+                            <div class="space-y-6">
+                                <h4 class="text-[10px] font-black text-red-600 uppercase tracking-widest border-l-4 border-red-400 pl-3 ml-1">System Mode</h4>
+                                
+                                <div class="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-red-100 transition-colors">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">Demo Mode</p>
+                                        <p class="text-[10px] text-gray-400 font-medium">Toggle global demo restrictions</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="demo_enabled" value="true" <%= config.demo_enabled ? 'checked' : '' %> class="sr-only peer">
+                                        <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                                    </label>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Demo Warning Message</label>
+                                    <textarea name="demo_message" rows="4" class="w-full bg-gray-50 border-none rounded-2xl px-4 py-4 text-sm font-medium focus:ring-2 focus:ring-yellow-400 transition-all outline-none resize-none"><%= config.demo_message %></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-8 border-t border-gray-100 flex justify-end">
+                            <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black text-xs px-10 py-4 rounded-2xl transition-all shadow-xl shadow-yellow-100 active:scale-95 uppercase tracking-widest">
+                                Save All Settings
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <%- include('partials/bottom-nav') %>
+    <%- include('partials/toast') %>
+
+</body>
+
+</html>

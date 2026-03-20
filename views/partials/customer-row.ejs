@@ -1,28 +1,35 @@
-<tr class="hover:bg-gray-50 text-sm transition" id="customer-row-<%= customer.id %>">
-    <td class="px-6 py-4 font-semibold text-gray-800">
-        <%= customer.name %>
+<tr class="hover:bg-gray-50/50 text-sm transition group" id="customer-row-<%= customer.id %>">
+    <td class="px-6 py-4">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                <%= customer.name.charAt(0).toUpperCase() %>
+            </div>
+            <div>
+                <p class="font-black text-gray-800 uppercase tracking-tighter text-[13px] leading-tight"><%= customer.name %></p>
+            </div>
+        </div>
     </td>
-    <td class="px-6 py-4 text-gray-600">
+    <td class="px-6 py-4 text-gray-500 font-bold text-[11px] tracking-tight whitespace-nowrap">
         <%= customer.phone || '—' %>
     </td>
-    <td class="px-6 py-4 text-gray-500 max-w-xs truncate">
-        <%= customer.address || '—' %>
+    <td class="px-6 py-4 text-[10px] font-medium text-gray-400 max-w-[200px] truncate italic hidden md:table-cell">
+        <%= customer.address || 'No address' %>
     </td>
     <td class="px-6 py-4">
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-            <%= customer.total_visits || 0 %> visits
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black bg-gray-50 text-gray-600 border border-gray-100 uppercase tracking-widest">
+            <%= customer.total_visits || 0 %> Visits
         </span>
     </td>
-    <td class="px-6 py-4">
-        <div class="flex items-center gap-2">
+    <td class="px-6 py-4 text-right">
+        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onclick="openEditCustomer('<%= customer.id %>')"
-                class="text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg transition font-medium">
-                ✏️ Edit
+                class="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-400 hover:text-gray-900 transition-colors shadow-sm">
+                ✏️
             </button>
             <button hx-delete="/admin/customer/<%= customer.id %>" hx-target="#customer-row-<%= customer.id %>"
-                hx-swap="outerHTML" hx-confirm="Delete <%= customer.name %>?" data-toast="Customer deleted."
-                class="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-lg transition font-medium">
-                🗑 Delete
+                hx-swap="outerHTML" hx-confirm="Delete client records for <%= customer.name %>?" data-toast="Record removed."
+                class="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-colors shadow-sm">
+                🗑
             </button>
         </div>
     </td>

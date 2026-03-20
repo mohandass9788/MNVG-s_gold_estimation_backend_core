@@ -1,29 +1,47 @@
-# Use Node.js 20 alpine as base image
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-slim AS builder
 
-# Install build dependencies for bcrypt and other native modules
-RUN apk add --no-cache python3 make g++
+# Install build dependencies
+RUN apt-get update && apt-get install -y python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy dependency manifests
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy Prisma schema
 COPY prisma ./prisma/
+
+# Install ALL dependencies
+RUN npm install
 
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Copy application source
+# Copy source code
 COPY . .
 
-# Expose port
+# Stage 2: Runtime
+FROM node:20-slim AS runner
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy required files
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/server.js ./ 
+COPY --from=builder /app/routes ./routes
+COPY --from=builder /app/views ./views
+COPY --from=builder /app/controllers ./controllers
+COPY --from=builder /app/middlewares ./middlewares
+
+# Optional (if exists)
+# COPY --from=builder /app/public ./public
+
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

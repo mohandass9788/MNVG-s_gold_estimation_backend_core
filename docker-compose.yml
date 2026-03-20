@@ -1,33 +1,37 @@
+version: '3.8'
+
 services:
   app:
     build: .
+    container_name: mnvg_backend
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=mysql://root:NeXooA!_2025@mysql_container:3306/mnv_groups_gold_estimation
-      - PORT=3000
-      - JWT_SECRET=mnv_gold_secret_key_12345
-      - CORS_ORIGIN=https://api.estimate.mnvgroups.in,http://localhost:3000
+      - DATABASE_URL=mysql://mnvg_user:${DB_PASSWORD:-pass}@db:3306/mnvg_gold
     depends_on:
-      mysql_container:
+      db:
         condition: service_healthy
+    restart: always
 
-  mysql_container:
+  db:
     image: mysql:8.0
-    container_name: mysql_container
+    container_name: mnvg_db
     restart: always
     environment:
-      - MYSQL_DATABASE=mnv_groups_gold_estimation
-      - MYSQL_ROOT_PASSWORD=NeXooA!_2025
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: mnvg_gold
+      MYSQL_USER: mnvg_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pass}
     ports:
-      - "3307:3306"
+      - "3307:3306" # Expose internally for local DB tools if needed
     volumes:
-      - db_data:/var/lib/mysql
+      - mnvg_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pNeXooA!_2025"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
       retries: 5
 
 volumes:
-  db_data:
+  mnvg_data:

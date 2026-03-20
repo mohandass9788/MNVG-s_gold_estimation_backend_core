@@ -1,0 +1,39 @@
+<!-- views/partials/bottom-nav.ejs -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-gray-100 flex items-center justify-around px-2 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <a href="/admin" class="flex flex-col items-center justify-center w-16 h-full text-gray-400 hover:text-yellow-600 transition-colors">
+        <span class="text-xl">🏠</span>
+        <span class="text-[9px] font-bold uppercase mt-0.5">Dashboard</span>
+    </a>
+    
+    <% if (admin && admin.role === 'super_admin') { %>
+    <a href="/admin/admins" class="flex flex-col items-center justify-center w-16 h-full text-gray-400 hover:text-yellow-600 transition-colors">
+        <span class="text-xl">🛡️</span>
+        <span class="text-[9px] font-bold uppercase mt-0.5">Admins</span>
+    </a>
+    
+    <a href="/admin/config" class="flex flex-col items-center justify-center w-16 h-full text-gray-400 hover:text-yellow-600 transition-colors">
+        <span class="text-xl">⚙️</span>
+        <span class="text-[9px] font-bold uppercase mt-0.5">Config</span>
+    </a>
+    <% } %>
+
+    <button onclick="openModal('logout-modal')" class="flex flex-col items-center justify-center w-16 h-full text-gray-400 hover:text-red-500 transition-colors">
+        <span class="text-xl">🚪</span>
+        <span class="text-[9px] font-bold uppercase mt-0.5">Exit</span>
+    </button>
+</div>
+
+<script>
+    (function() {
+        const path = window.location.pathname;
+        const links = document.querySelectorAll('.md\\:hidden.fixed.bottom-0 a');
+        links.forEach(link => {
+            if (link.getAttribute('href') === path) {
+                link.classList.remove('text-gray-400');
+                link.classList.add('text-yellow-600', 'bg-yellow-50/50');
+            }
+        });
+    })();
+</script>
+<!-- Safe Area Spacer for Mobile -->
+<div class="md:hidden h-20"></div>

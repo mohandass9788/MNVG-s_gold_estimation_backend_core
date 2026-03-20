@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const { verifyToken } = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -82,5 +83,19 @@ router.post('/register', authController.register);
  *         description: Invalid credentials
  */
 router.post('/login', authController.login);
+
+/**
+ * @swagger
+ * /api/auth/status:
+ *   get:
+ *     summary: Get current subscription/payment status
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current status returned
+ */
+router.get('/status', verifyToken, authController.getStatus);
 
 module.exports = router;

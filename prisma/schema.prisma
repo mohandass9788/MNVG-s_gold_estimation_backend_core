@@ -106,12 +106,19 @@ model user {
   id                      String       @id @db.VarChar(64)
   phone                   String       @unique(map: "phone") @db.VarChar(64)
   password                String       @db.VarChar(255)
+  plain_password          String?      @db.VarChar(255)
   name                    String?      @db.VarChar(128)
   shop_name               String?      @db.VarChar(128)
   role                    String?      @default("customer") @db.VarChar(64)
   max_allowed_devices     Int?         @default(4)
   subscription_valid_upto DateTime?
   is_trial                Boolean?     @default(true)
+  is_active               Boolean      @default(true)
+  feature_chit            Boolean      @default(true)
+  feature_purchase        Boolean      @default(true)
+  feature_estimation      Boolean      @default(true)
+  feature_advance_chit    Boolean      @default(true)
+  feature_repair          Boolean      @default(true)
   created_at              DateTime?    @default(now())
   updated_at              DateTime?
   customer                customer[]
@@ -120,4 +127,14 @@ model user {
   purchase                purchase[]
   repair                  repair[]
   session                 session[]
+}
+
+model app_config {
+  id           String    @id @default("1") @db.VarChar(64)
+  phone        String?   @db.VarChar(64)
+  whatsapp     String?   @db.VarChar(255)
+  email        String?   @db.VarChar(128)
+  demo_enabled Boolean   @default(true)
+  demo_message String?   @db.VarChar(512)
+  updated_at   DateTime? @updatedAt
 }

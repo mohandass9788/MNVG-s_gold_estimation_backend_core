@@ -1,0 +1,39 @@
+<!-- views/partials/toast.ejs -->
+<div id="toast" class="fixed bottom-20 md:bottom-8 right-6 bg-gray-900/95 backdrop-blur-md text-white px-6 py-3.5 rounded-2xl shadow-2xl z-[100] flex items-center gap-3 border border-white/10 ring-1 ring-black/5">
+    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-[10px]">✅</div>
+    <span id="toast-msg" class="text-sm font-medium">Action successful</span>
+</div>
+
+<script>
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        const icon = t.querySelector('div');
+        const msgSpan = document.getElementById('toast-msg');
+        
+        msgSpan.textContent = msg;
+        if (isError) {
+            icon.textContent = '❌';
+            icon.classList.remove('bg-green-500');
+            icon.classList.add('bg-red-500');
+        } else {
+            icon.textContent = '✅';
+            icon.classList.remove('bg-red-500');
+            icon.classList.add('bg-green-500');
+        }
+        
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // HTMX Global Error Handler
+    document.body.addEventListener('htmx:responseError', function(evt) {
+        showToast('Server error occurred', true);
+    });
+
+    // Handle generic success messages from backend scripts
+    document.body.addEventListener('htmx:afterRequest', (e) => {
+        if (e.detail.successful && e.detail.elt.dataset.toast) {
+            showToast(e.detail.elt.dataset.toast);
+        }
+    });
+</script>

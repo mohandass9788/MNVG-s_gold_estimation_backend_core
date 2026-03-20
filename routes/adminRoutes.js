@@ -144,13 +144,51 @@ router.get('/logout', (req, res) => {
 // ─── GET /admin ──────────────────────────────────────────────────────────────
 router.get('/', requireAdmin, async (req, res) => {
     try {
-        const [usersCount, activeSessions, trialCount, users] = await Promise.all([
-            prisma.user.count({ where: { role: 'customer' } }),
+        const [usersCount, activeSessionsCount, trialCount, users, allSessions] = await Promise.all([
+            prisma.user.count({ where: { OR: [{ role: 'customer' }, { role: null }] } }),
             prisma.session.count(),
-            prisma.user.count({ where: { is_trial: true, role: 'customer' } }),
-            prisma.user.findMany({ where: { role: 'customer' }, orderBy: { created_at: 'desc' } })
+            prisma.user.count({ where: { is_trial: true, OR: [{ role: 'customer' }, { role: null }] } }),
+            prisma.user.findMany({
+                where: { OR: [{ role: 'customer' }, { role: null }] },
+                include: {
+                    _count: {
+                        select: {
+                            customer: true,
+                            estimation: true,
+                            purchase: true,
+                            repair: true,
+                            employee: true
+                        }
+                    },
+                    session: {
+                        orderBy: { last_active: 'desc' },
+                        take: 1
+                    }
+                },
+                orderBy: { created_at: 'desc' }
+            }),
+            prisma.session.findMany({
+                include: { user: { select: { shop_name: true, name: true, phone: true } } },
+                orderBy: { last_active: 'desc' }
+            })
         ]);
-        res.render('dashboard', { usersCount, activeSessions, trialCount, users, admin: req.admin });
+
+        // Group sessions by shop_name
+        const groupedSessions = allSessions.reduce((acc, s) => {
+            const shop = s.user.shop_name || 'Individual';
+            if (!acc[shop]) acc[shop] = [];
+            acc[shop].push(s);
+            return acc;
+        }, {});
+
+        res.render('dashboard', {
+            usersCount,
+            activeSessions: activeSessionsCount,
+            trialCount,
+            users,
+            groupedSessions,
+            admin: req.admin
+        });
     } catch (e) {
         console.error(e);
         res.status(500).send('Dashboard error');
@@ -199,20 +237,38 @@ router.post('/user/add', requireAdmin, async (req, res) => {
         const trialEnd = new Date();
         trialEnd.setDate(trialEnd.getDate() + trialDays);
 
+        const userInclude = {
+            _count: {
+                select: {
+                    customer: true,
+                    estimation: true,
+                    purchase: true,
+                    repair: true,
+                    employee: true
+                }
+            },
+            session: {
+                orderBy: { last_active: 'desc' },
+                take: 1
+            }
+        };
+
         const user = await prisma.user.create({
             data: {
                 id: uuidv4(),
                 phone,
                 password: hashed,
+                plain_password: password || 'Welcome@123',
                 name: name || '',
                 shop_name: shop_name || '',
-                max_allowed_devices: parseInt(max_allowed_devices) || 4,
+                max_allowed_devices: parseInt(max_allowed_devices) || 1,
                 subscription_valid_upto: trialEnd,
                 is_trial: true,
                 role: 'customer',
-            }
+            },
+            include: userInclude
         });
-        res.render('partials/user-row', { user });
+        res.render('partials/user-card', { user });
     } catch (e) {
         console.error(e);
         res.status(500).send('Error creating user.');
@@ -286,9 +342,29 @@ router.post('/user/:id/edit', requireAdmin, async (req, res) => {
         const updateData = { name, shop_name, phone, max_allowed_devices: parseInt(max_allowed_devices) };
         if (password && password.trim() !== '') {
             updateData.password = await bcrypt.hash(password, 10);
+            updateData.plain_password = password;
         }
-        const user = await prisma.user.update({ where: { id }, data: updateData });
-        res.render('partials/user-row', { user });
+        const userInclude = {
+            _count: {
+                select: {
+                    customer: true,
+                    estimation: true,
+                    purchase: true,
+                    repair: true,
+                    employee: true
+                }
+            },
+            session: {
+                orderBy: { last_active: 'desc' },
+                take: 1
+            }
+        };
+        const user = await prisma.user.update({
+            where: { id },
+            data: updateData,
+            include: userInclude
+        });
+        res.render('partials/user-card', { user });
     } catch (e) {
         console.error(e);
         res.status(500).send('Error updating user.');
@@ -313,29 +389,129 @@ router.post('/user/:id/edit', requireAdmin, async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               days:
+ *               duration:
  *                 type: integer
+ *               unit:
+ *                 type: string
+ *                 enum: [days, months, years]
  *     responses:
  *       200:
- *         description: Updated user HTML row
+ *         description: Updated user HTML row or Shop Details status card
+ * /admin/user/{id}/reset-password:
+ *   post:
+ *     summary: Reset User Password
+ *     description: Resets password to a deterministic DDMM format if not specified.
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               new_password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: HTML status message
  */
 // ─── POST /admin/user/:id/extend ─────────────────────────────────────────────
 router.post('/user/:id/extend', requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const { days } = req.body;
+    const { duration, unit } = req.body; // duration: number, unit: 'days'|'months'|'years'
     try {
         const user = await prisma.user.findUnique({ where: { id } });
         let newDate = user.subscription_valid_upto ? new Date(user.subscription_valid_upto) : new Date();
         if (newDate < new Date()) newDate = new Date();
-        newDate.setDate(newDate.getDate() + parseInt(days));
+
+        const amount = parseInt(duration);
+        if (unit === 'years') newDate.setFullYear(newDate.getFullYear() + amount);
+        else if (unit === 'months') newDate.setMonth(newDate.getMonth() + amount);
+        else newDate.setDate(newDate.getDate() + amount);
+
+        const userInclude = {
+            _count: {
+                select: {
+                    customer: true,
+                    estimation: true,
+                    purchase: true,
+                    repair: true,
+                    employee: true
+                }
+            },
+            session: {
+                orderBy: { last_active: 'desc' },
+                take: 1
+            }
+        };
         const updatedUser = await prisma.user.update({
             where: { id },
-            data: { subscription_valid_upto: newDate, is_trial: false }
+            data: { subscription_valid_upto: newDate, is_trial: false },
+            include: userInclude
         });
-        res.render('partials/user-row', { user: updatedUser });
+
+        // Determine if called from user-row/user-card or shop-details
+        const hxTarget = req.headers['hx-target'];
+
+        if (hxTarget && (hxTarget.startsWith('user-row') || hxTarget.startsWith('user-card'))) {
+            res.render('partials/user-card', { user: updatedUser });
+        } else {
+            // Smart update for shop-details.ejs
+            const expDate = updatedUser.subscription_valid_upto ? new Date(updatedUser.subscription_valid_upto) : null;
+            const isExpired = !expDate || expDate < new Date();
+            const dateStr = expDate ? expDate.toLocaleDateString('en-IN', { dateStyle: 'long' }) : 'Expired';
+            const typeStr = updatedUser.is_trial ? 'Trial Account' : 'Paid Plan';
+            const color = isExpired ? 'text-red-500' : 'text-green-600';
+
+            res.send(`
+            <div class="text-center py-4 bg-gray-50 rounded-xl border border-gray-100" id="sub-validity-status" hx-swap-oob="true">
+                <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">Subscription Valid Until</p>
+                <p class="text-lg font-bold ${color}">${dateStr}</p>
+                <span class="inline-block mt-2 px-3 py-1 bg-white rounded-full text-[9px] font-bold border border-gray-100 uppercase tracking-wider">${typeStr}</span>
+            </div>
+            <script>showToast('Subscription extended successfully!');</script>
+            `);
+        }
     } catch (e) {
         console.error(e);
         res.status(500).send('Error extending subscription.');
+    }
+});
+
+// ─── POST /admin/user/:id/reset-password ──────────────────────────────────────
+router.post('/user/:id/reset-password', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    let { new_password } = req.body;
+
+    try {
+        // Deterministic Password based on DDMM if not specified
+        if (!new_password || new_password.trim() === '') {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            new_password = `${day}${month}`;
+        }
+
+        const hashed = await bcrypt.hash(new_password, 10);
+        await prisma.user.update({
+            where: { id },
+            data: {
+                password: hashed,
+                plain_password: new_password
+            }
+        });
+        res.send(`
+        <div class="text-green-600 font-bold text-[10px] uppercase">✅ Reset to: ${new_password}</div>
+        <script>showToast('Password reset successfully!');</script>
+        `);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error resetting password.');
     }
 });
 
@@ -368,11 +544,36 @@ router.post('/user/:id/devices', requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { max_allowed_devices } = req.body;
     try {
+        const userInclude = {
+            _count: {
+                select: {
+                    customer: true,
+                    estimation: true,
+                    purchase: true,
+                    repair: true,
+                    employee: true
+                }
+            },
+            session: {
+                orderBy: { last_active: 'desc' },
+                take: 1
+            }
+        };
         const user = await prisma.user.update({
             where: { id },
-            data: { max_allowed_devices: parseInt(max_allowed_devices) }
+            data: { max_allowed_devices: parseInt(max_allowed_devices) },
+            include: userInclude
         });
-        res.render('partials/user-row', { user });
+
+        const hxTarget = req.headers['hx-target'];
+        if (hxTarget && (hxTarget.startsWith('user-row') || hxTarget.startsWith('user-card'))) {
+            res.render('partials/user-card', { user });
+        } else {
+            res.send(`
+            <span class="text-[9px] font-bold text-gray-400" id="device-slots-status" hx-swap-oob="true">${user.session.length} / ${user.max_allowed_devices} SLOTS USED</span>
+            <script>showToast('Device limit updated!');</script>
+            `);
+        }
     } catch (e) {
         console.error(e);
         res.status(500).send('Error updating devices.');
@@ -409,6 +610,53 @@ router.delete('/user/:id', requireAdmin, async (req, res) => {
 
 /**
  * @swagger
+ * /admin/user/{id}/details:
+ *   get:
+ *     summary: Render Shop Details Page
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: HTML page of shop profile
+ */
+// ─── GET /admin/user/:id/details ────────────────────────────────────────────────
+router.get('/user/:id/details', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id },
+            include: {
+                _count: {
+                    select: {
+                        customer: true,
+                        estimation: true,
+                        purchase: true,
+                        repair: true,
+                        employee: true
+                    }
+                },
+                session: {
+                    orderBy: { last_active: 'desc' }
+                }
+            }
+        });
+
+        if (!user) return res.status(404).send('User not found');
+
+        res.render('shop-details', { user, admin: req.admin });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading shop details.');
+    }
+});
+
+/**
+ * @swagger
  * /admin/user/{id}/customers:
  *   get:
  *     summary: Render User's Customers Page
@@ -428,13 +676,54 @@ router.get('/user/:id/customers', requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const [user, customers] = await Promise.all([
-            prisma.user.findUnique({ where: { id } }),
+            prisma.user.findUnique({
+                where: { id },
+                include: {
+                    _count: {
+                        select: {
+                            customer: true,
+                            estimation: true,
+                            purchase: true,
+                            repair: true,
+                            employee: true
+                        }
+                    }
+                }
+            }),
             prisma.customer.findMany({ where: { userId: id }, orderBy: { name: 'asc' } })
         ]);
         res.render('customers', { user, customers, admin: req.admin });
     } catch (e) {
         console.error(e);
         res.status(500).send('Error loading customers.');
+    }
+});
+
+/**
+ * @swagger
+ * /admin/session/{id}:
+ *   delete:
+ *     summary: Terminate an active user session
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Session removed successfully
+ */
+// ─── DELETE /admin/session/:id ───────────────────────────────────────────────
+router.delete('/session/:id', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.session.delete({ where: { id } });
+        res.send(''); // Return empty to remove element via hx-swap="delete"
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error deleting session.');
     }
 });
 
@@ -462,6 +751,94 @@ router.get('/user/:id/customers', requireAdmin, async (req, res) => {
  *       200:
  *         description: HTML row of customer
  */
+/**
+ * @swagger
+ * /admin/user/{id}/toggle-active:
+ *   post:
+ *     summary: Toggle User Active Status
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: HTML status badge swapping
+ */
+// ─── POST /admin/user/:id/toggle-active ─────────────────────────────────────
+router.post('/user/:id/toggle-active', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await prisma.user.findUnique({ where: { id } });
+        await prisma.user.update({
+            where: { id },
+            data: { is_active: !user.is_active }
+        });
+
+        const active = !user.is_active;
+        res.send(`
+            <span class="px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-2 transition-all ${active ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'}">
+                ${active ? '✅' : '🚫'}
+                <span class="uppercase tracking-widest">${active ? 'Active' : 'Deactivated'}</span>
+            </span>
+            <script>showToast('Status updated to ${active ? 'Active' : 'Inactive'}');</script>
+        `);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error');
+    }
+});
+
+/**
+ * @swagger
+ * /admin/user/{id}/features:
+ *   post:
+ *     summary: Update User Feature Permissions
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               chit: { type: string, example: "on" }
+ *               purchase: { type: string, example: "on" }
+ *               estimation: { type: string, example: "on" }
+ *               advance_chit: { type: string, example: "on" }
+ *               repair: { type: string, example: "on" }
+ *     responses:
+ *       200:
+ *         description: HTML success message
+ */
+// ─── POST /admin/user/:id/features ──────────────────────────────────────────
+router.post('/user/:id/features', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { chit, purchase, estimation, advance_chit, repair } = req.body;
+    try {
+        await prisma.user.update({
+            where: { id },
+            data: {
+                feature_chit: chit === 'on',
+                feature_purchase: purchase === 'on',
+                feature_estimation: estimation === 'on',
+                feature_advance_chit: advance_chit === 'on',
+                feature_repair: repair === 'on'
+            }
+        });
+        res.send('<div class="text-green-600 text-[10px] font-bold">✅ Features Updated</div>');
+    } catch (e) {
+        res.status(500).send('Error');
+    }
+});
+
 // ─── POST /admin/customer/add ─────────────────────────────────────────────────
 router.post('/customer/add', requireAdmin, async (req, res) => {
     const { userId, name, phone, address } = req.body;
@@ -610,6 +987,16 @@ router.get('/admins', requireSuperAdmin, async (req, res) => {
  *   post:
  *     summary: Add New Admin
  *     tags: [Admin]
+ *     requestBody:
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             required: [phone, password]
+ *             properties:
+ *               phone: { type: string }
+ *               password: { type: string }
+ *               name: { type: string }
  */
 router.post('/admins/add', requireSuperAdmin, async (req, res) => {
     const { phone, password, name } = req.body;
@@ -623,6 +1010,7 @@ router.post('/admins/add', requireSuperAdmin, async (req, res) => {
                 id: uuidv4(),
                 phone,
                 password: hashed,
+                plain_password: password,
                 name: name || '',
                 role: 'admin',
                 is_trial: false,
@@ -659,6 +1047,15 @@ router.get('/admins/:id/edit-form', requireSuperAdmin, async (req, res) => {
  *   post:
  *     summary: Update Admin
  *     tags: [Admin]
+ *     requestBody:
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               phone: { type: string }
+ *               password: { type: string }
  */
 router.post('/admins/:id/edit', requireSuperAdmin, async (req, res) => {
     const { id } = req.params;
@@ -667,6 +1064,7 @@ router.post('/admins/:id/edit', requireSuperAdmin, async (req, res) => {
         const updateData = { name, phone };
         if (password && password.trim() !== '') {
             updateData.password = await bcrypt.hash(password, 10);
+            updateData.plain_password = password;
         }
         const user = await prisma.user.update({ where: { id }, data: updateData });
         res.render('partials/admin-row', { user, admin: req.admin });
@@ -692,6 +1090,77 @@ router.delete('/admins/:id', requireSuperAdmin, async (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).send('Error deleting admin');
+    }
+});
+
+/**
+ * @swagger
+ * /admin/config:
+ *   get:
+ *     summary: Render App Configuration Page
+ *     tags: [Admin]
+ */
+router.get('/config', requireSuperAdmin, async (req, res) => {
+    try {
+        let config = await prisma.app_config.findFirst();
+        if (!config) {
+            config = {
+                phone: "+91 9788339566",
+                whatsapp: "https://wa.me/919788339566",
+                email: "nexooai@gmail.com",
+                demo_enabled: true,
+                demo_message: "Please call our support numbers to activate the full version."
+            };
+        }
+        res.render('admin-config', { config, admin: req.admin });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading config');
+    }
+});
+
+/**
+ * @swagger
+ * /admin/config:
+ *   post:
+ *     summary: Update App Configuration
+ *     tags: [Admin]
+ */
+router.post('/config', requireSuperAdmin, async (req, res) => {
+    try {
+        const { phone, whatsapp, email, demo_enabled, demo_message } = req.body;
+
+        let config = await prisma.app_config.findFirst();
+        const data = {
+            phone: phone || '',
+            whatsapp: whatsapp || '',
+            email: email || '',
+            demo_enabled: demo_enabled === 'on',
+            demo_message: demo_message || ''
+        };
+
+        if (config) {
+            await prisma.app_config.update({
+                where: { id: config.id },
+                data
+            });
+        } else {
+            // DB schema might not be pushed if MySQL is down.
+            // Catch error gracefully.
+            try {
+                await prisma.app_config.create({
+                    data: { id: "1", ...data }
+                });
+            } catch (dbErr) {
+                console.error("Could not save to DB (maybe schema not pushed):", dbErr);
+                return res.status(500).send('<div class="text-red-600 font-bold p-2 bg-red-100 rounded">Database error. Run npx prisma db push.</div>');
+            }
+        }
+
+        res.send(`<script>showToast('Configuration saved successfully!');</script>`);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error saving config');
     }
 });
 

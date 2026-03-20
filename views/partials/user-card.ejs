@@ -1,0 +1,75 @@
+<% const expDate = user.subscription_valid_upto ? new Date(user.subscription_valid_upto) : null; 
+   const isExpired = !expDate || expDate < new Date(); 
+   const dateStr = expDate ? expDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Expired'; 
+   const lastSync = user.session && user.session.length > 0 ? new Date(user.session[0].last_active) : null;
+%>
+<% 
+    const statusColors = {
+        active_trial: 'bg-blue-50 text-blue-600 border-blue-100',
+        expired_trial: 'bg-orange-50 text-orange-600 border-orange-100',
+        active_paid: 'bg-green-50 text-green-600 border-green-100',
+        expired_paid: 'bg-red-50 text-red-600 border-red-100'
+    };
+
+    const statusLabels = {
+        active_trial: '✨ Trial',
+        expired_trial: '⏳ Trial Expired',
+        active_paid: '💎 Premium',
+        expired_paid: '🚫 Expired'
+    };
+
+    let status = 'expired_paid';
+    if (user.is_trial) {
+        status = isExpired ? 'expired_trial' : 'active_trial';
+    } else {
+        status = isExpired ? 'expired_paid' : 'active_paid';
+    }
+%>
+
+<a href="/admin/user/<%= user.id %>/details" class="block bg-white rounded-3xl border border-gray-100 shadow-sm p-5 hover:border-yellow-400 hover:shadow-xl transition-all relative group" id="user-card-<%= user.id %>">
+    <!-- Header: Shop & Status -->
+    <div class="flex justify-between items-start mb-4">
+        <div class="flex-1 min-w-0 pr-2">
+            <h4 class="font-black text-gray-900 leading-tight group-hover:text-yellow-600 transition truncate uppercase tracking-tighter text-sm italic"><%= user.shop_name || 'No Shop Name' %></h4>
+            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5"><%= user.name %></p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black border shadow-sm <%= statusColors[status] %> uppercase tracking-widest bg-white">
+            <%= statusLabels[status] %>
+        </span>
+    </div>
+
+    <!-- Phone & Metrics -->
+    <div class="space-y-3 mb-5">
+        <div class="flex items-center justify-between bg-gray-50/50 p-2.5 rounded-2xl border border-gray-100 group/pass relative">
+            <div class="flex flex-col min-w-0">
+                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Owner Access</span>
+                <p class="text-[10px] font-black text-gray-900 font-mono tracking-tighter truncate blur-[4px] transition-all" id="pass-<%= user.id %>">
+                    P: <%= user.phone %> <span class="mx-0.5">•</span> KEY: <%= user.plain_password || '[RESET TO VIEW]' %>
+                </p>
+            </div>
+            <button onclick="event.preventDefault(); event.stopPropagation(); document.getElementById('pass-<%= user.id %>').classList.toggle('blur-[4px]')" 
+                class="w-7 h-7 flex items-center justify-center rounded-xl bg-white border border-gray-100 shadow-sm hover:border-yellow-400 transition-all text-[10px]" title="Toggle Visibility">👁️</button>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex-1 bg-gray-50/50 rounded-2xl p-2.5 flex flex-col items-center">
+                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active Slots</span>
+                <span class="text-sm font-black text-gray-800"><%= user.session.length %> / <%= user.max_allowed_devices %></span>
+            </div>
+            <div class="flex-1 bg-gray-50/50 rounded-2xl p-2.5 flex flex-col items-center">
+                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Customers</span>
+                <span class="text-sm font-black text-gray-800"><%= user._count?.customer || 0 %></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer: Expiry -->
+    <div class="flex items-center justify-between text-[10px] border-t border-gray-50 pt-3">
+        <div class="flex items-center gap-2 font-black text-gray-400 uppercase tracking-widest">
+            <span class="w-2 h-2 rounded-full <%= isExpired ? 'bg-red-400 animate-pulse' : 'bg-green-400' %>"></span>
+            <%= dateStr %>
+        </div>
+        <div class="text-[9px] font-bold text-yellow-600/60 uppercase">
+            <%= lastSync ? 'Last Seen ' + new Date(lastSync).toLocaleDateString([], { month: 'short', day: '2-digit' }) : 'Never Active' %>
+        </div>
+    </div>
+</a>

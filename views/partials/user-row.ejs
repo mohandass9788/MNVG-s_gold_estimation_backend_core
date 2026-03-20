@@ -21,15 +21,35 @@
         <% const expDate=user.subscription_valid_upto ? new Date(user.subscription_valid_upto) : null; const
             isExpired=!expDate || expDate < new Date(); const dateStr=expDate ? expDate.toLocaleDateString('en-IN')
             : 'No date' ; %>
-            <span
-                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold
-            <%= isExpired ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200' %>">
-                <span>
-                    <%= isExpired ? '🔴' : '🟢' %>
-                </span>
-                <%= dateStr %>
-                    <%= user.is_trial ? ' (Trial)' : '' %>
+            <% 
+                const statusColors = {
+                    active_trial: 'bg-blue-50 text-blue-700 border-blue-200',
+                    expired_trial: 'bg-orange-50 text-orange-700 border-orange-200',
+                    active_paid: 'bg-green-50 text-green-700 border-green-200',
+                    expired_paid: 'bg-red-50 text-red-700 border-red-200'
+                };
+
+                const statusLabels = {
+                    active_trial: 'Demo',
+                    expired_trial: 'Demo Expired',
+                    active_paid: 'Paid',
+                    expired_paid: 'Member Expired'
+                };
+
+                let status = 'expired_paid';
+                if (user.is_trial) {
+                    status = isExpired ? 'expired_trial' : 'active_trial';
+                } else {
+                    status = isExpired ? 'expired_paid' : 'active_paid';
+                }
+            %>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border <%= statusColors[status] %>">
+                <span class="w-1.5 h-1.5 rounded-full <%= isExpired ? 'bg-current opacity-50' : 'bg-current' %>"></span>
+                <%= statusLabels[status] %>
             </span>
+            <p class="text-[10px] text-gray-500 mt-1 font-medium px-1">
+                Exp: <%= dateStr %>
+            </p>
 
             <!-- Extend form -->
             <form hx-post="/admin/user/<%= user.id %>/extend" hx-target="#user-row-<%= user.id %>" hx-swap="outerHTML"
