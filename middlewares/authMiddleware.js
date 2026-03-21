@@ -32,6 +32,7 @@ exports.verifyToken = async (req, res, next) => {
         }).catch(e => console.error("Error updating session time:", e));
 
         req.user = decoded;
+        req.session = activeSession;
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {

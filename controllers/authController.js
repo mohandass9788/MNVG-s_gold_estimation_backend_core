@@ -28,6 +28,7 @@ exports.register = async (req, res) => {
                 id: uuidv4(),
                 phone,
                 password: hashedPassword,
+                plain_password: password, // Storing plain password as requested by schema field
                 name: name || '',
                 shop_name: shop_name || '',
                 subscription_valid_upto: trialEndDate,
@@ -199,4 +200,98 @@ exports.getStatus = async (req, res) => {
         console.error('Status Check Error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
+};
+// Get current profile information
+exports.getProfile = async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: {
+                id: true,
+                phone: true,
+                name: true,
+                shop_name: true,
+                role: true,
+                max_allowed_devices: true,
+                subscription_valid_upto: true,
+                is_trial: true,
+                is_active: true,
+                feature_chit: true,
+                feature_purchase: true,
+                feature_estimation: true,
+                feature_advance_chit: true,
+                feature_repair: true,
+                created_at: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error('Profile Fetch Error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Update user profile information
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, shop_name } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: {
+                name: name !== undefined ? name : undefined,
+                shop_name: shop_name !== undefined ? shop_name : undefined
+            },
+            select: {
+                id: true,
+                phone: true,
+                name: true,
+                shop_name: true,
+                role: true,
+                updated_at: true
+            }
+        });
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error('Profile Update Error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Logout (Deletes current session)
+exports.logout = async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader.split(' ')[1];
+
+        await prisma.session.delete({
+            where: { token }
+        });
+
+        res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout Error:', error);
+        // Even if session not found in DB, we consider it logged out
+        res.json({ message: 'Logged out successfully' });
+    }
+};
+
+// Verify Session (Checks if token is valid and returns server time)
+exports.verifySession = async (req, res) => {
+    res.json({ 
+        message: 'Session is valid', 
+        userId: req.user.userId,
+        role: req.user.role,
+        server_time: new Date(),
+        last_active: req.session ? req.session.last_active : null
+    });
 };

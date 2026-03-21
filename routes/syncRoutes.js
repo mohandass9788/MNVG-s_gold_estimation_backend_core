@@ -67,4 +67,16 @@ router.post('/push', verifyToken, checkSubscription, syncController.pushData);
  */
 router.post('/pull', verifyToken, syncController.pullData);
 
+/**
+ * @swagger
+ * /api/sync/logs:
+ *   post:
+ *     summary: Upload App Diagnostic Logs
+ *     description: Store error or debug logs from the mobile app for admin review.
+ *     tags: [Sync]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/logs', verifyToken, syncController.saveLog);
+
 module.exports = router;

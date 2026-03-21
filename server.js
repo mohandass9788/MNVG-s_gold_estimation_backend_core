@@ -30,8 +30,11 @@ app.use(express.static(path.join(__dirname, 'public'))); // For static assets li
 const authRoutes = require('./routes/authRoutes');
 const syncRoutes = require('./routes/syncRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const itemRoutes = require('./routes/itemRoutes');
 const publicRoutes = require('./routes/publicRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const productRoutes = require('./routes/productRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
 
@@ -40,12 +43,15 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
-app.use('/api/item', itemRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/report', reportRoutes);
+app.use('/api/product', productRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
 app.use('/admin', adminRoutes);
 
 app.get('/', (req, res) => {
-    res.send('Gold Estimation API is running...');
+    res.send('Gold Estimation API is running... [V100]');
 });
 
 const PORT = process.env.PORT || 3000;

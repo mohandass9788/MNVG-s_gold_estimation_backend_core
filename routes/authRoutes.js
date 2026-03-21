@@ -98,4 +98,96 @@ router.post('/login', authController.login);
  */
 router.get('/status', verifyToken, authController.getStatus);
 
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     summary: Get current user profile details
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile details returned
+ *       404:
+ *         description: User not found
+ */
+router.get('/profile', verifyToken, authController.getProfile);
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   put:
+ *     summary: Update user profile details
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               shop_name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ */
+router.put('/profile', verifyToken, authController.updateProfile);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout and revoke current device session
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
+router.post('/logout', verifyToken, authController.logout);
+
+/**
+ * @swagger
+ * /api/auth/verify-session:
+ *   get:
+ *     summary: Verify if the current session token is still valid
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Session is valid
+ *       401:
+ *         description: Session expired or invalid
+ */
+router.get('/verify-session', verifyToken, authController.verifySession);
+
+/**
+ * @swagger
+ * /api/auth/profile/password:
+ *   post:
+ *     summary: Change user password
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       401:
+ *         description: Current password mismatch
+ */
+router.post('/profile/password', verifyToken, authController.changePassword);
+
 module.exports = router;

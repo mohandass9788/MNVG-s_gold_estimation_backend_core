@@ -79,6 +79,42 @@
                             </div>
                         </div>
 
+                        <!-- App Release Control -->
+                        <div class="pt-8 border-t border-gray-100 flex flex-col space-y-6">
+                            <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-widest border-l-4 border-blue-400 pl-3 ml-1">App Release Control</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="space-y-4">
+                                    <div class="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-blue-100 transition-colors">
+                                        <div>
+                                            <p class="text-xs font-bold text-gray-800">Maintenance Mode</p>
+                                            <p class="text-[10px] text-gray-400 font-medium">Block all app access for updates</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" name="maintenance_mode" value="on" <%= config.maintenance_mode ? 'checked' : '' %> class="sr-only peer">
+                                            <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="space-y-1">
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Min Version (Force Update)</label>
+                                            <input type="text" name="min_version" value="<%= config.min_version || '1.0.0' %>" placeholder="1.0.0" class="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-400 transition-all outline-none">
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Latest Version</label>
+                                            <input type="text" name="latest_version" value="<%= config.latest_version || '1.0.0' %>" placeholder="1.0.0" class="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-400 transition-all outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Global Broadcast Message</label>
+                                    <textarea name="broadcast_message" rows="4" placeholder="Hello subscribers! We have added new features..." class="w-full bg-gray-50 border-none rounded-2xl px-4 py-4 text-sm font-medium focus:ring-2 focus:ring-blue-400 transition-all outline-none resize-none"><%= config.broadcast_message %></textarea>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="pt-8 border-t border-gray-100 flex justify-end">
                             <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black text-xs px-10 py-4 rounded-2xl transition-all shadow-xl shadow-yellow-100 active:scale-95 uppercase tracking-widest">
                                 Save All Settings

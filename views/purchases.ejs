@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', { title: 'Purchase History | MNVG Gold' }) %>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden sidebar-open" hx-boost="true">
+
+    <%- include('partials/sidebar') %>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 glass sticky top-0 z-30 flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100/50 hover:bg-gray-200 transition-colors text-xl">☰</button>
+                <a href="/admin/user/<%= user.id %>/details" class="text-gray-400 hover:text-gray-800 transition-colors text-lg">←</a>
+                <div class="h-5 w-px bg-gray-200"></div>
+                <div>
+                    <h2 class="text-base font-bold text-gray-800 tracking-tight leading-none"><%= user.shop_name %></h2>
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">Purchase Archives</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="p-4 md:p-6 flex-1 overflow-auto space-y-6 custom-scrollbar">
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Total Purchases</p>
+                    <p class="text-xl font-black text-gray-800"><%= user._count.purchase %></p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
+                    <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">Purchase Records</h3>
+                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        <%= purchases.length %> Records
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50/50 text-gray-400 text-[10px] uppercase font-black border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-4">Bill / Customer</th>
+                                <th class="px-6 py-4">Phone</th>
+                                <th class="px-6 py-4">Amount</th>
+                                <th class="px-6 py-4">Items</th>
+                                <th class="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <% purchases.forEach(p => { %>
+                                <%- include('partials/purchase-row', { p }) %>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+                <% if (purchases.length === 0) { %>
+                    <div class="text-center py-16 text-gray-400 text-sm italic">No records found.</div>
+                <% } %>
+            </div>
+        </main>
+    </div>
+
+    <!-- DETAIL MODAL -->
+    <div id="detail-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300"
+        onclick="closeModalOnBg(event, 'detail-modal')">
+        <div id="detail-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform" onclick="event.stopPropagation()">
+            <!-- HTMX content goes here -->
+        </div>
+    </div>
+
+    <%- include('partials/bottom-nav') %>
+    <%- include('partials/toast') %>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function closeModalOnBg(e, id) { if (e.target === e.currentTarget) closeModal(id); }
+
+        function openPurchaseDetails(id) {
+            openModal('detail-modal');
+            document.getElementById('detail-content').innerHTML = `
+                <div class="p-20 flex flex-col items-center justify-center text-gray-300">
+                    <div class="w-12 h-12 border-4 border-gray-100 border-t-yellow-400 rounded-full animate-spin mb-4"></div>
+                    <p class="text-xs font-black uppercase tracking-widest">Loading Details...</p>
+                </div>
+            `;
+            htmx.ajax('GET', `/admin/purchase/${id}/details`, { target: '#detail-content' });
+        }
+    </script>
+</body>
+</html>

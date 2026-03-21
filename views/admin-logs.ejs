@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('partials/head', { title: 'App Logs — MNVG Gold' }) %>
+
+<body class="bg-gray-50 flex h-screen overflow-hidden sidebar-open" hx-boost="true">
+
+    <%- include('partials/sidebar') %>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 glass sticky top-0 z-30 flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-100">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100/50 hover:bg-gray-200 transition-colors text-xl">☰</button>
+                <h2 class="text-lg font-bold text-gray-800 tracking-tight">App <span class="text-blue-500">Diagnostics</span></h2>
+            </div>
+            <button hx-delete="/admin/logs/clear" hx-target="#logs-container" hx-confirm="Are you sure you want to clear all logs?"
+                class="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all active:scale-95">
+                Clear All Logs
+            </button>
+        </header>
+
+        <main class="p-6 flex-1 overflow-auto custom-scrollbar" id="logs-container">
+            <% if (logs.length === 0) { %>
+                <div class="h-full flex flex-col items-center justify-center text-gray-300">
+                    <p class="text-4xl mb-4">📝</p>
+                    <p class="text-xs font-black uppercase tracking-widest">No logs found in database</p>
+                </div>
+            <% } else { %>
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-[11px]">
+                        <thead class="bg-gray-50 text-gray-400 font-black uppercase tracking-widest border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-4">Time</th>
+                                <th class="px-6 py-4">Level</th>
+                                <th class="px-6 py-4">User ID</th>
+                                <th class="px-6 py-4">Message</th>
+                                <th class="px-6 py-4">Device Info</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <% logs.forEach(log => { %>
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-6 py-4 font-mono text-gray-400 whitespace-nowrap">
+                                        <%= new Date(log.created_at).toLocaleString('en-IN') %>
+                                    </td>
+                                    <td class="px-6 py-4 font-black">
+                                        <span class="px-2 py-0.5 rounded-full <%= log.level === 'error' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600' %> uppercase">
+                                            <%= log.level %>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 font-mono text-[9px] text-gray-400"><%= log.userId || 'Guest' %></td>
+                                    <td class="px-6 py-4 font-bold text-gray-800"><%= log.message %></td>
+                                    <td class="px-6 py-4">
+                                        <pre class="text-[9px] text-gray-400 bg-gray-50 p-2 rounded-lg max-w-xs overflow-auto"><%= JSON.stringify(log.device_info, null, 2) %></pre>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </main>
+    </div>
+
+    <%- include('partials/bottom-nav') %>
+    <%- include('partials/toast') %>
+
+</body>
+</html>

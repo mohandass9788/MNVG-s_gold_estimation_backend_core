@@ -699,6 +699,161 @@ router.get('/user/:id/customers', requireAdmin, async (req, res) => {
     }
 });
 
+// ─── GET /admin/user/:id/estimations ─────────────────────────────────────────
+router.get('/user/:id/estimations', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [user, rawEstimations] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id },
+                include: { _count: { select: { customer: true, estimation: true } } }
+            }),
+            prisma.estimation.findMany({
+                where: { userId: id },
+                orderBy: { date: 'desc' }, // Changed from created_at to date based on schema
+                select: { id: true, local_id: true, bill_no: true, customer_name: true, customer_phone: true, total_amount: true, items: true, date: true, userId: true }
+            })
+        ]);
+
+        // Add safe status default
+        const estimations = rawEstimations.map(e => ({ ...e, status: e.status || 'active' }));
+
+        res.render('estimations', { user, estimations, admin: req.admin });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading estimations');
+    }
+});
+
+// ─── GET /admin/user/:id/purchases ───────────────────────────────────────────
+router.get('/user/:id/purchases', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [user, purchases] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id },
+                include: { _count: { select: { purchase: true } } }
+            }),
+            prisma.purchase.findMany({
+                where: { userId: id },
+                orderBy: { date: 'desc' }
+            })
+        ]);
+        res.render('purchases', { user, purchases, admin: req.admin });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading purchases');
+    }
+});
+
+// ─── GET /admin/user/:id/repairs ─────────────────────────────────────────────
+router.get('/user/:id/repairs', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [user, repairs] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id },
+                include: { _count: { select: { repair: true } } }
+            }),
+            prisma.repair.findMany({
+                where: { userId: id },
+                orderBy: { date: 'desc' },
+                select: { id: true, local_id: true, receipt_no: true, customer_name: true, customer_phone: true, item_desc: true, estimated_cost: true, advance_paid: true, status: true, date: true, userId: true }
+            })
+        ]);
+        res.render('repairs', { user, repairs, admin: req.admin });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading repairs');
+    }
+});
+
+// ─── GET /estimation/:id/details (HTMX detail popup) ──────────────────
+router.get('/estimation/:id/details', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const est = await prisma.estimation.findUnique({
+            where: { id },
+            select: { id: true, local_id: true, bill_no: true, customer_name: true, customer_phone: true, total_amount: true, items: true, date: true, userId: true }
+        });
+        if (!est) return res.status(404).send('Estimation not found');
+        res.render('partials/estimation-details', { est });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading estimation details');
+    }
+});
+
+// ─── GET /purchase/:id/details ───────────────────────────────────────────
+router.get('/purchase/:id/details', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const p = await prisma.purchase.findUnique({ where: { id } });
+        if (!p) return res.status(404).send('Purchase not found');
+        res.render('partials/purchase-details', { p });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error');
+    }
+});
+
+// ─── GET /repair/:id/details ─────────────────────────────────────────────
+router.get('/repair/:id/details', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const r = await prisma.repair.findUnique({
+            where: { id },
+            select: { id: true, local_id: true, receipt_no: true, customer_name: true, customer_phone: true, item_desc: true, estimated_cost: true, advance_paid: true, status: true, date: true, userId: true }
+        });
+        if (!r) return res.status(404).send('Repair not found');
+        res.render('partials/repair-details', { r });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error');
+    }
+});
+
+// ─── GET /customer/:id/details ────────────────────────────────────────────────
+router.get('/customer/:id/details', requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const customer = await prisma.customer.findUnique({
+            where: { id }
+        });
+        if (!customer) return res.status(404).send('Customer not found');
+
+        // Manual counts based on phone number (since those tables don't have customerId relations)
+        const [estCount, purCount, repCount] = await Promise.all([
+            prisma.estimation.count({ where: { customer_phone: customer.phone, userId: customer.userId } }),
+            prisma.purchase.count({ where: { customer_phone: customer.phone, userId: customer.userId } }),
+            prisma.repair.count({ where: { customer_phone: customer.phone, userId: customer.userId } })
+        ]);
+
+        // Mock the _count object for the template
+        customer._count = {
+            estimation: estCount,
+            purchase: purCount,
+            repair: repCount
+        };
+
+        res.render('partials/customer-details', { customer });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error');
+    }
+});
+
+// ─── DELETE Endpoints ────────────────────────────────────────────────────────
+router.delete('/estimation/:id', requireAdmin, async (req, res) => {
+    try { await prisma.estimation.delete({ where: { id: req.params.id } }); res.send(''); } catch (e) { res.status(500).send('Error'); }
+});
+router.delete('/purchase/:id', requireAdmin, async (req, res) => {
+    try { await prisma.purchase.delete({ where: { id: req.params.id } }); res.send(''); } catch (e) { res.status(500).send('Error'); }
+});
+router.delete('/repair/:id', requireAdmin, async (req, res) => {
+    try { await prisma.repair.delete({ where: { id: req.params.id } }); res.send(''); } catch (e) { res.status(500).send('Error'); }
+});
+
 /**
  * @swagger
  * /admin/session/{id}:
@@ -1128,7 +1283,7 @@ router.get('/config', requireSuperAdmin, async (req, res) => {
  */
 router.post('/config', requireSuperAdmin, async (req, res) => {
     try {
-        const { phone, whatsapp, email, demo_enabled, demo_message } = req.body;
+        const { phone, whatsapp, email, demo_enabled, demo_message, min_version, latest_version, maintenance_mode, broadcast_message } = req.body;
 
         let config = await prisma.app_config.findFirst();
         const data = {
@@ -1136,7 +1291,11 @@ router.post('/config', requireSuperAdmin, async (req, res) => {
             whatsapp: whatsapp || '',
             email: email || '',
             demo_enabled: demo_enabled === 'on',
-            demo_message: demo_message || ''
+            demo_message: demo_message || '',
+            min_version: min_version || '1.0.0',
+            latest_version: latest_version || '1.0.0',
+            maintenance_mode: maintenance_mode === 'on',
+            broadcast_message: broadcast_message || ''
         };
 
         if (config) {
@@ -1161,6 +1320,29 @@ router.post('/config', requireSuperAdmin, async (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).send('Error saving config');
+    }
+});
+
+// ─── ADMIN LOGS VIEW ──────────────────────────────────────────────────────────
+router.get('/logs', requireSuperAdmin, async (req, res) => {
+    try {
+        const logs = await prisma.app_log.findMany({
+            orderBy: { created_at: 'desc' },
+            take: 100 // Last 100 logs
+        });
+        res.render('admin-logs', { logs, admin: req.admin });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send('Error loading logs');
+    }
+});
+
+router.delete('/logs/clear', requireSuperAdmin, async (req, res) => {
+    try {
+        await prisma.app_log.deleteMany();
+        res.send('<div class="text-center py-20 text-gray-400 font-black uppercase tracking-widest h-full flex flex-col items-center justify-center">✅ Logs Cleared</div>');
+    } catch (e) {
+        res.status(500).send('Error');
     }
 });
 

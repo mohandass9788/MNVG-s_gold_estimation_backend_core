@@ -31,6 +31,7 @@ model employee {
   role      String?   @db.VarChar(64)
   salary    Float?
   join_date DateTime?
+  status    String?   @default("active") @db.VarChar(64)
   userId    String    @db.VarChar(64)
   user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Employee_userId_fkey")
 
@@ -136,5 +137,29 @@ model app_config {
   email        String?   @db.VarChar(128)
   demo_enabled Boolean   @default(true)
   demo_message String?   @db.VarChar(512)
+  min_version     String?   @default("1.0.0") @db.VarChar(16)
+  latest_version  String?   @default("1.0.0") @db.VarChar(16)
+  maintenance_mode Boolean   @default(false)
+  broadcast_message String?   @db.Text
   updated_at   DateTime? @updatedAt
+}
+
+model request_call {
+  id         String   @id @default(uuid()) @db.VarChar(64)
+  name       String   @db.VarChar(128)
+  phone      String   @db.VarChar(64)
+  source     String?  @db.VarChar(128)
+  status     String   @default("pending") @db.VarChar(64)
+  created_at DateTime @default(now())
+
+  @@index([phone], map: "RequestCall_phone_idx")
+}
+
+model app_log {
+  id         String   @id @default(uuid()) @db.VarChar(64)
+  userId     String?  @db.VarChar(64)
+  level      String   @db.VarChar(16) // info, error, debug
+  message    String   @db.Text
+  device_info Json?
+  created_at DateTime @default(now())
 }

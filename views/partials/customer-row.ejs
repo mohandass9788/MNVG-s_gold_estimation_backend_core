@@ -1,4 +1,4 @@
-<tr class="hover:bg-gray-50/50 text-sm transition group" id="customer-row-<%= customer.id %>">
+<tr class="hover:bg-gray-50/50 text-sm transition group cursor-pointer" id="customer-row-<%= customer.id %>" onclick="openCustomerDetails('<%= customer.id %>')">
     <td class="px-6 py-4">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[10px]">
@@ -20,7 +20,7 @@
             <%= customer.total_visits || 0 %> Visits
         </span>
     </td>
-    <td class="px-6 py-4 text-right">
+    <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
         <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button onclick="openEditCustomer('<%= customer.id %>')"
                 class="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-400 hover:text-gray-900 transition-colors shadow-sm">

@@ -1,0 +1,33 @@
+<tr class="hover:bg-gray-50/50 text-sm transition group cursor-pointer" id="repair-row-<%= r.id %>" onclick="openRepairDetails('<%= r.id %>')">
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-black text-[10px]">
+                #<%= r.receipt_no %>
+            </div>
+            <div>
+                <p class="font-black text-gray-800 uppercase tracking-tighter text-[13px] leading-tight"><%= r.customer_name %></p>
+                <p class="text-[10px] text-gray-400 font-medium tracking-tight"><%= r.local_id %></p>
+            </div>
+        </div>
+    </td>
+    <td class="px-6 py-4 text-gray-500 font-bold text-[11px] tracking-tight whitespace-nowrap">
+        <%= r.customer_phone || '—' %>
+    </td>
+    <td class="px-6 py-4 text-[11px] font-medium text-gray-400 max-w-[200px] truncate italic">
+        <%= r.item_desc || 'No description' %>
+    </td>
+    <td class="px-6 py-4">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black <%= r.status === 'completed' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100' %> border uppercase tracking-widest">
+            <%= r.status %>
+        </span>
+    </td>
+    <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button hx-delete="/admin/repair/<%= r.id %>" hx-target="#repair-row-<%= r.id %>"
+                hx-swap="outerHTML" hx-confirm="Delete repair record?" data-toast="Record removed."
+                class="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-colors shadow-sm">
+                🗑
+            </button>
+        </div>
+    </td>
+</tr>

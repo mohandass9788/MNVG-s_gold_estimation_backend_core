@@ -124,6 +124,12 @@
         <div id="edit-customer-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform" onclick="event.stopPropagation()"></div>
     </div>
 
+    <!-- DETAIL MODAL -->
+    <div id="detail-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300"
+        onclick="closeModalOnBg(event, 'detail-modal')">
+        <div id="detail-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden transform" onclick="event.stopPropagation()"></div>
+    </div>
+
     <%- include('partials/bottom-nav') %>
     <%- include('partials/toast') %>
 
@@ -131,6 +137,17 @@
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function closeModalOnBg(e, id) { if (e.target === e.currentTarget) closeModal(id); }
+
+        function openCustomerDetails(id) {
+            openModal('detail-modal');
+            document.getElementById('detail-content').innerHTML = `
+                <div class="p-20 flex flex-col items-center justify-center text-gray-300">
+                    <div class="w-12 h-12 border-4 border-gray-100 border-t-yellow-400 rounded-full animate-spin mb-4"></div>
+                    <p class="text-xs font-black uppercase tracking-widest">Loading Profile...</p>
+                </div>
+            `;
+            htmx.ajax('GET', `/admin/customer/${id}/details`, { target: '#detail-content' });
+        }
 
         function openEditCustomer(id) {
             openModal('edit-customer-modal');

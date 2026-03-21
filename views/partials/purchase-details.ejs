@@ -1,0 +1,82 @@
+<div class="flex flex-col h-full">
+    <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div>
+            <h3 class="text-xl font-black text-gray-800 uppercase tracking-tight leading-tight">Purchase Details</h3>
+            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Bill #<%= p.bill_no %> • <%= new Date(p.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></p>
+        </div>
+        <button onclick="closeModal('detail-modal')" class="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-gray-200 transition-colors text-gray-400 text-lg">✕</button>
+    </div>
+    
+    <div class="p-8 overflow-auto custom-scrollbar space-y-8">
+        <!-- Customer Info -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="space-y-1">
+                <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Customer Name</p>
+                <p class="text-sm font-bold text-gray-800"><%= p.customer_name %></p>
+            </div>
+            <div class="space-y-1">
+                <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Phone Number</p>
+                <p class="text-sm font-bold text-gray-800"><%= p.customer_phone || 'N/A' %></p>
+            </div>
+            <div class="space-y-1 text-right">
+                <p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">Total Amount</p>
+                <p class="text-xl font-black text-green-600">₹<%= p.total_amount.toLocaleString('en-IN') %></p>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="rounded-2xl border border-gray-100 overflow-hidden">
+            <table class="w-full text-left text-[11px]">
+                <thead class="bg-gray-50 text-gray-400 font-black uppercase tracking-widest border-b border-gray-100">
+                    <tr>
+                        <th class="px-4 py-3">Item Description</th>
+                        <th class="px-4 py-3 text-right">G.Wt</th>
+                        <th class="px-4 py-3 text-right">N.Wt</th>
+                        <th class="px-4 py-3 text-center">Purity</th>
+                        <th class="px-4 py-3 text-right">Rate</th>
+                        <th class="px-4 py-3 text-right">Deduction</th>
+                        <th class="px-4 py-3 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    <% 
+                        let items = [];
+                        try { items = typeof p.items === 'string' ? JSON.parse(p.items) : p.items || []; } catch(e){}
+                        items.forEach(item => { 
+                    %>
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-4 py-3">
+                            <p class="font-bold text-gray-800 uppercase"><%= item.name %></p>
+                            <p class="text-[9px] text-gray-400 tracking-tight"><%= item.subProductName || '' %></p>
+                        </td>
+                        <td class="px-4 py-3 text-right"><%= item.grossWeight %>g</td>
+                        <td class="px-4 py-3 text-right font-bold hover:text-green-600"><%= item.netWeight %>g</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full bg-green-50 text-green-600 font-black text-[9px]"><%= item.purity %>K</span>
+                        </td>
+                        <td class="px-4 py-3 text-right">₹<%= item.rate.toLocaleString('en-IN') %></td>
+                        <td class="px-4 py-3 text-right text-red-400">-₹<%= item.deductionValue?.toLocaleString('en-IN') || '0' %></td>
+                        <td class="px-4 py-3 text-right font-black text-gray-900 border-l border-gray-50">
+                            ₹<%= item.totalValue.toLocaleString('en-IN') %>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-gray-100 border-dashed">
+            <div class="text-right space-y-1">
+                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Payout Amount</p>
+                <p class="text-3xl font-black text-gray-800 tracking-tighter italic">₹<%= p.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+        <button onclick="closeModal('detail-modal')"
+            class="px-8 py-3 bg-gray-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95">
+            Close View
+        </button>
+    </div>
+</div>
