@@ -246,3 +246,35 @@ exports.saveLog = async (req, res) => {
         res.status(500).json({ error: 'Failed to save log' });
     }
 };
+
+/**
+ * Update the push notification token for the current session
+ */
+exports.updateDeviceToken = async (req, res) => {
+    try {
+        const { pushToken } = req.body;
+
+        if (!pushToken) {
+            return res.status(400).json({ error: 'Push token is required' });
+        }
+
+        // Ensure current session exists (req.session is attached by authMiddleware)
+        if (!req.session || !req.session.id) {
+            return res.status(401).json({ error: 'No active session found' });
+        }
+
+        await prisma.session.update({
+            where: { id: req.session.id },
+            data: { push_token: pushToken }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Device token updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Update Token Error:', error);
+        res.status(500).json({ error: 'Failed to update device token' });
+    }
+};

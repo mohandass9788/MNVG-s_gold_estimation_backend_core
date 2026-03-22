@@ -50,26 +50,23 @@ router.get('/tag/:tag', (req, res) => {
 
 /**
  * @swagger
- * /api/product/scan-tag:
- *   post:
- *     summary: Scan Item Tag
+ * /api/product/scan/{tag}:
+ *   get:
+ *     summary: Scan Item Tag (GET version)
+ *     description: Retrieve product details by passing the tag in the URL.
  *     tags: [Product]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               itemtag:
- *                 type: string
+ *     parameters:
+ *       - in: path
+ *         name: tag
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Product details retrieved
  */
-router.post('/scan-tag', (req, res) => {
-    const { itemtag } = req.body;
-    res.json(getDummyItem(itemtag));
+router.get('/scan/:tag', (req, res) => {
+    res.json(getDummyItem(req.params.tag));
 });
 
 /**

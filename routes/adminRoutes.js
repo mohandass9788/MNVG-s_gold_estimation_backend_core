@@ -141,15 +141,68 @@ router.get('/logout', (req, res) => {
  *       302:
  *         description: Redirect to login if unauthorized
  */
-// ─── GET /admin ──────────────────────────────────────────────────────────────
+// ─── GET /admin ──────────────────────────────────────────────
 router.get('/', requireAdmin, async (req, res) => {
     try {
-        const [usersCount, activeSessionsCount, trialCount, users, allSessions] = await Promise.all([
+        const { search, type, period, start_date, end_date } = req.query;
+
+        // Base where for users (only customers/shop owners)
+        let where = { OR: [{ role: 'customer' }, { role: null }] };
+
+        // Search Filter (ID, Name, Phone)
+        if (search) {
+            where = {
+                AND: [
+                    where,
+                    {
+                        OR: [
+                            { id: { contains: search } },
+                            { name: { contains: search } },
+                            { phone: { contains: search } },
+                            { shop_name: { contains: search } }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        // Account Type Filter
+        if (type === 'premium') where.is_trial = false;
+        else if (type === 'trial') where.is_trial = true;
+
+        // Date Period Filter
+        if (period && period !== 'all') {
+            let from = new Date();
+            from.setHours(0, 0, 0, 0);
+            let to = new Date();
+            to.setHours(23, 59, 59, 999);
+
+            if (period === 'today') {
+                // from and to are already today
+            } else if (period === 'yesterday') {
+                from.setDate(from.getDate() - 1);
+                to.setDate(to.getDate() - 1);
+            } else if (period === 'week') {
+                from.setDate(from.getDate() - 7);
+            } else if (period === 'month') {
+                from.setMonth(from.getMonth() - 1);
+            } else if (period === 'custom' && start_date) {
+                from = new Date(start_date);
+                to = end_date ? new Date(end_date) : new Date();
+                to.setHours(23, 59, 59, 999);
+            }
+
+            where.created_at = { gte: from, lte: to };
+        }
+
+        const [usersCount, activeSessionsCount, trialCount,
+            pendingCallsCount, users, allSessions] = await Promise.all([
             prisma.user.count({ where: { OR: [{ role: 'customer' }, { role: null }] } }),
             prisma.session.count(),
             prisma.user.count({ where: { is_trial: true, OR: [{ role: 'customer' }, { role: null }] } }),
+            prisma.request_call.count({ where: { status: 'pending' } }),
             prisma.user.findMany({
-                where: { OR: [{ role: 'customer' }, { role: null }] },
+                where,
                 include: {
                     _count: {
                         select: {
@@ -181,12 +234,19 @@ router.get('/', requireAdmin, async (req, res) => {
             return acc;
         }, {});
 
+        // If HTMX request, return only the user list partial
+        if (req.headers['hx-request']) {
+            return res.render('partials/user-list-refresh', { users });
+        }
+
         res.render('dashboard', {
             usersCount,
             activeSessions: activeSessionsCount,
             trialCount,
+            pendingCallsCount,
             users,
             groupedSessions,
+            filters: { search, type, period, start_date, end_date },
             admin: req.admin
         });
     } catch (e) {
@@ -1283,7 +1343,7 @@ router.get('/config', requireSuperAdmin, async (req, res) => {
  */
 router.post('/config', requireSuperAdmin, async (req, res) => {
     try {
-        const { phone, whatsapp, email, demo_enabled, demo_message, min_version, latest_version, maintenance_mode, broadcast_message } = req.body;
+        const { phone, whatsapp, email, demo_enabled, demo_message, min_version, latest_version, maintenance_mode, broadcast_message, privacy_policy_html, terms_conditions_html } = req.body;
 
         let config = await prisma.app_config.findFirst();
         const data = {
@@ -1295,7 +1355,10 @@ router.post('/config', requireSuperAdmin, async (req, res) => {
             min_version: min_version || '1.0.0',
             latest_version: latest_version || '1.0.0',
             maintenance_mode: maintenance_mode === 'on',
-            broadcast_message: broadcast_message || ''
+            broadcast_message: broadcast_message || '',
+            privacy_policy_html: privacy_policy_html || '',
+            terms_conditions_html: terms_conditions_html || ''
+
         };
 
         if (config) {
@@ -1340,11 +1403,57 @@ router.get('/logs', requireSuperAdmin, async (req, res) => {
 router.delete('/logs/clear', requireSuperAdmin, async (req, res) => {
     try {
         await prisma.app_log.deleteMany();
-        res.send('<div class="text-center py-20 text-gray-400 font-black uppercase tracking-widest h-full flex flex-col items-center justify-center">✅ Logs Cleared</div>');
-    } catch (e) {
-        res.status(500).send('Error');
-    }
-});
+            res.send('<div class="text-center py-20 text-gray-400 font-black uppercase tracking-widest h-full flex flex-col items-center justify-center">✅ Logs Cleared</div>');
+        } catch (e) {
+            res.status(500).send('Error');
+        }
+    });
 
-module.exports = router;
+    /**
+     * @swagger
+     * /admin/user/{id}/reset-password:
+     *   post:
+     *     summary: Emergency Password Reset for User
+     *     tags: [Admin]
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *     requestBody:
+     *       content:
+     *         application/x-www-form-urlencoded:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               new_password: { type: string }
+     */
+    router.post('/user/:id/reset-password', requireSuperAdmin, async (req, res) => {
+        const { id } = req.params;
+        const { new_password } = req.body;
+        
+        if (!new_password || new_password.trim() === '') {
+            return res.send('<div class="text-red-500 text-[10px] font-bold">❌ Code required</div>');
+        }
 
+        try {
+            const hashed = await bcrypt.hash(new_password, 10);
+            await prisma.user.update({
+                where: { id },
+                data: { 
+                    password: hashed,
+                    plain_password: new_password
+                }
+            });
+            res.send(`
+                <div class="text-green-600 text-[10px] font-bold bounce-in">✅ Reset to: ${new_password}</div>
+                <script>showToast('Password reset to ${new_password}');</script>
+            `);
+        } catch (e) {
+            console.error(e);
+            res.status(500).send('Error');
+        }
+    });
+
+    module.exports = router;

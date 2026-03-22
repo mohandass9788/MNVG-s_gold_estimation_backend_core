@@ -69,14 +69,16 @@ router.post('/pull', verifyToken, syncController.pullData);
 
 /**
  * @swagger
- * /api/sync/logs:
+ * /api/sync/device-token:
  *   post:
- *     summary: Upload App Diagnostic Logs
- *     description: Store error or debug logs from the mobile app for admin review.
+ *     summary: Update Push Notification Token
+ *     description: Associate a push notification token with the current session for this device.
  *     tags: [Sync]
  *     security:
  *       - bearerAuth: []
  */
+router.post('/device-token', verifyToken, syncController.updateDeviceToken);
+
 router.post('/logs', verifyToken, syncController.saveLog);
 
 module.exports = router;

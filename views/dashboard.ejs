@@ -24,7 +24,7 @@
         <main class="p-4 md:p-6 flex-1 overflow-auto space-y-6 custom-scrollbar">
 
             <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                 <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-2xl">👥</div>
                     <div>
@@ -46,6 +46,25 @@
                         <p class="text-2xl font-black text-gray-800"><%= trialCount %></p>
                     </div>
                 </div>
+                <!-- REQUEST CALL CARD -->
+                <a href="/admin/logs" class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow group relative overflow-hidden">
+                    <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">☎️</div>
+                    <div class="relative z-10">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Request Calls</p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-2xl font-black text-gray-800"><%= pendingCallsCount %></p>
+                            <% if (pendingCallsCount > 0) { %>
+                                <span class="flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                            <% } %>
+                        </div>
+                    </div>
+                    <% if (pendingCallsCount > 0) { %>
+                        <div class="absolute inset-0 bg-red-50/30 animate-pulse-slow"></div>
+                    <% } %>
+                </a>
             </div>
 
             <!-- Dashboard Content Grid -->
@@ -53,30 +72,77 @@
                 
                 <!-- Main Content: Shop Owners Cards -->
                 <div class="lg:col-span-3 space-y-6">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h3 class="text-xl font-bold text-gray-800">Shop Owners</h3>
                             <p class="text-xs text-gray-400 font-medium">Manage registrations and check sync status</p>
                         </div>
                         <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-100 shadow-sm text-[10px] font-black text-gray-500 uppercase tracking-tighter">
                             <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                            <%= users.length %> Total
+                            <%= users.length %> Showing
+                        </div>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <!-- Search -->
+                            <div class="md:col-span-5 relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 text-xs">🔍</span>
+                                <input type="text" name="search" placeholder="Search by Name, Phone, or ID..." 
+                                    hx-get="/admin" hx-trigger="keyup changed delay:500ms, search" hx-target="#user-list"
+                                    hx-include="[name='type'], [name='period'], [name='start_date'], [name='end_date']"
+                                    class="w-full bg-gray-50 border-none rounded-2xl pl-10 pr-4 py-3 text-xs font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                            </div>
+
+                            <!-- Account Type -->
+                            <div class="md:col-span-3">
+                                <select name="type" hx-get="/admin" hx-target="#user-list" hx-trigger="change"
+                                    hx-include="[name='search'], [name='period'], [name='start_date'], [name='end_date']"
+                                    class="w-full bg-gray-50 border-none rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                                    <option value="all">All Accounts</option>
+                                    <option value="premium">Premium Only</option>
+                                    <option value="trial">Trial Only</option>
+                                </select>
+                            </div>
+
+                            <!-- Period -->
+                            <div class="md:col-span-4">
+                                <select name="period" id="period-select" hx-get="/admin" hx-target="#user-list" hx-trigger="change"
+                                    hx-include="[name='search'], [name='type'], [name='start_date'], [name='end_date']"
+                                    onchange="toggleCustomDates(this.value)"
+                                    class="w-full bg-gray-50 border-none rounded-2xl px-4 py-3 text-xs font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                                    <option value="all">All Time</option>
+                                    <option value="today">Created Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="week">Last 7 Days</option>
+                                    <option value="month">Last 30 Days</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom Date Range (Hidden by default) -->
+                        <div id="custom-date-row" class="hidden grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-2">Start Date</label>
+                                <input type="date" name="start_date" hx-get="/admin" hx-target="#user-list" hx-trigger="change"
+                                    hx-include="[name='search'], [name='type'], [name='period'], [name='end_date']"
+                                    class="w-full bg-gray-50 border-none rounded-2xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-2">End Date</label>
+                                <input type="date" name="end_date" hx-get="/admin" hx-target="#user-list" hx-trigger="change"
+                                    hx-include="[name='search'], [name='type'], [name='period'], [name='start_date']"
+                                    class="w-full bg-gray-50 border-none rounded-2xl px-4 py-2.5 text-xs font-bold focus:ring-2 focus:ring-yellow-400 transition-all outline-none">
+                            </div>
                         </div>
                     </div>
 
                     <!-- User Cards Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="user-list">
-                        <% users.forEach(user => { %>
-                            <%- include('partials/user-card', { user }) %>
-                        <% }) %>
+                        <%- include('partials/user-list-refresh', { users }) %>
                     </div>
-
-                    <% if (users.length === 0) { %>
-                        <div class="bg-white rounded-3xl border-2 border-dashed border-gray-100 py-20 text-center">
-                            <div class="text-4xl mb-4">🏪</div>
-                            <p class="text-gray-400 text-sm font-medium">No shops registered yet.</p>
-                        </div>
-                    <% } %>
                 </div>
 
                 <!-- Sidebar Content: Active Sessions -->
@@ -194,7 +260,22 @@
             document.getElementById('edit-user-modal').classList.remove('hidden');
             htmx.ajax('GET', `/admin/user/${userId}/edit-form`, { target: '#edit-modal-content' });
         }
+
+        function toggleCustomDates(val) {
+            const row = document.getElementById('custom-date-row');
+            if (val === 'custom') row.classList.remove('hidden');
+            else row.classList.add('hidden');
+        }
     </script>
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 0.4; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
 </body>
 
 </html>

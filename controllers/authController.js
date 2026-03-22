@@ -48,7 +48,7 @@ exports.register = async (req, res) => {
 // Device Login with limit tracking
 exports.login = async (req, res) => {
     try {
-        const { phone, password, device_name, device_id } = req.body;
+        const { phone, password, device_name, device_id, push_token } = req.body;
 
         if (!phone || !password) {
             return res.status(400).json({ error: 'Phone and password are required' });
@@ -89,6 +89,7 @@ exports.login = async (req, res) => {
                 data: {
                     token,
                     device_name: device_name || existingDeviceSession.device_name,
+                    push_token: push_token || existingDeviceSession.push_token,
                     last_active: new Date()
                 }
             });
@@ -117,6 +118,7 @@ exports.login = async (req, res) => {
                     token,
                     device_id: device_id || 'unknown_device',
                     device_name: device_name || 'Unknown',
+                    push_token: push_token || null,
                     userId: user.id,
                     last_active: new Date(),
                 }
@@ -294,4 +296,37 @@ exports.verifySession = async (req, res) => {
         server_time: new Date(),
         last_active: req.session ? req.session.last_active : null
     });
+};
+
+/**
+ * Change password for current user
+ */
+exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: 'Current and new passwords are required' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) return res.status(401).json({ error: 'Invalid current password' });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { 
+                password: hashedPassword,
+                plain_password: newPassword
+            }
+        });
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Password Change Error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };

@@ -1,0 +1,10 @@
+<% users.forEach(user => { %>
+    <%- include('user-card', { user }) %>
+<% }) %>
+
+<% if (users.length === 0) { %>
+    <div class="col-span-full bg-white rounded-3xl border-2 border-dashed border-gray-100 py-20 text-center">
+        <div class="text-4xl mb-4">🏪</div>
+        <p class="text-gray-400 text-sm font-medium">No shops match your search.</p>
+    </div>
+<% } %>

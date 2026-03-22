@@ -95,6 +95,7 @@ model session {
   token       String    @unique(map: "token") @db.VarChar(255)
   device_id   String?   @db.VarChar(128)
   device_name String?   @db.VarChar(128)
+  push_token  String?   @db.Text
   login_time  DateTime? @default(now())
   last_active DateTime
   userId      String    @db.VarChar(64)
@@ -141,6 +142,8 @@ model app_config {
   latest_version  String?   @default("1.0.0") @db.VarChar(16)
   maintenance_mode Boolean   @default(false)
   broadcast_message String?   @db.Text
+  privacy_policy_html String? @db.LongText
+  terms_conditions_html String? @db.LongText
   updated_at   DateTime? @updatedAt
 }
 

@@ -28,34 +28,30 @@ router.get('/status', async (req, res) => {
     }
 });
 
-/**
- * @swagger
- * /api/public/legal/privacy:
- *   get:
- *     summary: View Privacy Policy
- *     tags: [Public]
- */
-router.get('/legal/privacy', (req, res) => {
-    res.send(`
-        <html><head><title>Privacy Policy</title><style>body{font-family:sans-serif;padding:40px;line-height:1.6;}</style></head>
-        <body><h1>Privacy Policy</h1><p>We take your data privacy seriously. All synced data for <b>MNVG's Gold Estimation</b> is stored securely on our encrypted servers.</p>
-        <p>This app collects shop data (Estimations, Purchases, Repairs) solely for the purpose of backup and restoration across your devices.</p></body></html>
-    `);
+// ─── GET /api/public/legal/privacy ──────────────────────────────────────────
+router.get('/legal/privacy', async (req, res) => {
+    try {
+        const config = await prisma.app_config.findFirst({ select: { privacy_policy_html: true } });
+        if (config && config.privacy_policy_html) {
+            return res.send(config.privacy_policy_html);
+        }
+        res.send('<html><body style="font-family:sans-serif;padding:40px;"><h1>Privacy Policy</h1><p>Placeholder content. Please update in Admin Panel.</p></body></html>');
+    } catch (error) {
+        res.status(500).send('Error loading content.');
+    }
 });
 
-/**
- * @swagger
- * /api/public/legal/terms:
- *   get:
- *     summary: View Terms of Service
- *     tags: [Public]
- */
-router.get('/legal/terms', (req, res) => {
-    res.send(`
-        <html><head><title>Terms of Service</title><style>body{font-family:sans-serif;padding:40px;line-height:1.6;}</style></head>
-        <body><h1>Terms of Service</h1><p>Welcome to <b>MNVG's Gold Estimation</b>.</p>
-        <p>By using this service, you agree to store your business data on our cloud platform. We are not responsible for local data loss on your device.</p></body></html>
-    `);
+// ─── GET /api/public/legal/terms ─────────────────────────────────────────────
+router.get('/legal/terms', async (req, res) => {
+    try {
+        const config = await prisma.app_config.findFirst({ select: { terms_conditions_html: true } });
+        if (config && config.terms_conditions_html) {
+            return res.send(config.terms_conditions_html);
+        }
+        res.send('<html><body style="font-family:sans-serif;padding:40px;"><h1>Terms & Conditions</h1><p>Placeholder content. Please update in Admin Panel.</p></body></html>');
+    } catch (error) {
+        res.status(500).send('Error loading content.');
+    }
 });
 
 router.get('/config', async (req, res) => {
@@ -151,6 +147,24 @@ router.post('/request-call', async (req, res) => {
         console.error("Error submitting call request:", error);
         res.status(500).json({ error: "Internal server error" });
     }
+});
+
+/**
+ * @swagger
+ * /api/public/tutorial-video:
+ *   get:
+ *     summary: Get Tutorial Video Details
+ *     description: Returns the official tutorial video link and metadata for the app.
+ *     tags: [Public]
+ */
+router.get('/tutorial-video', async (req, res) => {
+    res.json({
+        isEnabled: true,
+        videoUrl: "https://www.youtube.com/watch?v=EXAMPLE_ID",
+        title: "Welcome Tutorial",
+        description: "Learn how to use the Gold Estimation app",
+        showOnScreens: ["activation", "dashboard"]
+    });
 });
 
 module.exports = router;

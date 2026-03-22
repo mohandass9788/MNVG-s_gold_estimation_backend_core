@@ -114,6 +114,22 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Legal Policies Editor -->
+                        <div class="pt-8 border-t border-gray-100 flex flex-col space-y-6">
+                            <h4 class="text-[10px] font-black text-purple-600 uppercase tracking-widest border-l-4 border-purple-400 pl-3 ml-1">Legal Document Editor (HTML)</h4>
+                            
+                            <div class="grid grid-cols-1 gap-8">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Privacy Policy (Full HTML)</label>
+                                    <textarea name="privacy_policy_html" rows="12" placeholder="<html><body>...</body></html>" class="w-full bg-gray-50 border-none rounded-2xl px-6 py-5 text-sm font-mono focus:ring-2 focus:ring-purple-400 transition-all outline-none resize-y"><%= config.privacy_policy_html %></textarea>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter ml-1">Terms & Conditions (Full HTML)</label>
+                                    <textarea name="terms_conditions_html" rows="12" placeholder="<html><body>...</body></html>" class="w-full bg-gray-50 border-none rounded-2xl px-6 py-5 text-sm font-mono focus:ring-2 focus:ring-purple-400 transition-all outline-none resize-y"><%= config.terms_conditions_html %></textarea>
+                                </div>
+                            </div>
+                        </div>
+
 
                         <div class="pt-8 border-t border-gray-100 flex justify-end">
                             <button type="submit" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-black text-xs px-10 py-4 rounded-2xl transition-all shadow-xl shadow-yellow-100 active:scale-95 uppercase tracking-widest">
