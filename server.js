@@ -38,8 +38,10 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
 
-// Swagger Documentation Point
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Swagger Documentation Point (Protected by Admin Auth)
+const { requireAdmin } = require('./middlewares/adminAuth');
+app.use('/api-docs', requireAdmin, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
@@ -51,7 +53,17 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/admin', adminRoutes);
 
 app.get('/', (req, res) => {
-    res.send('Gold Estimation API is running... [V100]');
+    const uptime = process.uptime();
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
+    const uptimeStr = `${hours}P ${minutes}M ${seconds}S`.replace('P', 'h').replace('M', 'm').replace('S', 's');
+
+    res.render('index', {
+        version: 'V100',
+        uptime: uptimeStr,
+        serverTime: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }) + ' ' + new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })
+    });
 });
 
 const PORT = process.env.PORT || 3000;

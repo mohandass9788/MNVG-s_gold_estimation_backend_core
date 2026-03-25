@@ -190,4 +190,20 @@ router.get('/verify-session', verifyToken, authController.verifySession);
  */
 router.post('/profile/password', verifyToken, authController.changePassword);
 
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   delete:
+ *     summary: Delete user account and all associated data
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted successfully
+ *       404:
+ *         description: User not found
+ */
+router.delete('/profile', verifyToken, authController.deleteAccount);
+
 module.exports = router;

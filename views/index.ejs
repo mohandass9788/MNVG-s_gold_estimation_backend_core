@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Estimation API — Operational</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #050505;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+        }
+
+        .gold-glow {
+            box-shadow: 0 0 40px rgba(245, 200, 66, 0.15);
+        }
+
+        .text-gradient-gold {
+            background: linear-gradient(135deg, #f5c842 0%, #e0a020 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #f5c842, #e0a020);
+            color: #000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 200, 66, 0.3);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(45, 90%, 50%, 0.15) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(220, 90%, 50%, 0.1) 0, transparent 50%),
+                radial-gradient(at 50% 100%, hsla(45, 90%, 50%, 0.05) 0, transparent 50%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+    <div class="bg-mesh"></div>
+
+    <div class="w-full max-w-4xl">
+        <div class="glass-card p-8 md:p-12 gold-glow">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-12">
+                <div class="flex-1 text-center md:text-left">
+                    <div class="inline-flex items-center space-x-2 bg-white/5 px-4 py-2 rounded-full border border-white/10 mb-6">
+                        <span class="status-dot"></span>
+                        <span class="text-xs font-semibold tracking-widest uppercase text-emerald-400">System Operational</span>
+                    </div>
+                    
+                    <h1 class="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
+                        Gold <span class="text-gradient-gold">Estimation</span><br/>
+                        Core API <span class="text-3xl text-white/30 font-light">[<%= version %>]</span>
+                    </h1>
+                    
+                    <p class="text-lg text-white/60 mb-10 max-w-lg leading-relaxed">
+                        High-performance backend engine for real-time gold valuation, purchase management, and secure financial synchronization.
+                    </p>
+
+                    <div class="flex flex-wrap gap-4 justify-center md:justify-start">
+                        <a href="/admin/login" class="btn-premium px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider">
+                            Admin Dashboard
+                        </a>
+                        <button onclick="checkConnection()" id="test-btn" class="bg-white/5 hover:bg-white/10 border border-white/10 px-8 py-4 rounded-2xl font-bold text-sm uppercase tracking-wider transition-all flex items-center gap-2">
+                            <span id="test-icon">⚡</span> <span id="test-text">Test Connection</span>
+                        </button>
+                        <a href="/api-docs" class="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all">
+                            API Docs
+                        </a>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-72 space-y-4">
+                    <div id="conn-status-card" class="bg-white/5 p-6 rounded-2xl border border-white/10 transition-all duration-500">
+                        <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">Connectivity</p>
+                        <p id="conn-status-text" class="text-2xl font-bold text-white/90">Standby</p>
+                    </div>
+
+                    <div class="bg-white/5 p-6 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">Service Uptime</p>
+                        <p class="text-2xl font-mono text-white/90"><%= uptime %></p>
+                    </div>
+                    
+                    <div class="bg-white/5 p-6 rounded-2xl border border-white/10">
+                        <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">Server Time (IST)</p>
+                        <p class="text-xl font-mono text-white/90 text-xs"><%= serverTime %></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-white/30 text-xs">MNV Groups © 2026 • Advanced Gold Estimation Systems</p>
+                <div class="flex space-x-6">
+                    <span class="text-white/20 text-[10px] uppercase tracking-tighter">Reliability: 99.9%</span>
+                    <span class="text-white/20 text-[10px] uppercase tracking-tighter">Security: AES-256</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Smooth entrance
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 1s ease-out';
+        window.addEventListener('load', () => {
+            document.body.style.opacity = '1';
+        });
+
+        async function checkConnection() {
+            const btn = document.getElementById('test-btn');
+            const text = document.getElementById('test-text');
+            const icon = document.getElementById('test-icon');
+            const statusCard = document.getElementById('conn-status-card');
+            const statusText = document.getElementById('conn-status-text');
+
+            // Loading state
+            btn.disabled = true;
+            text.innerText = 'Checking...';
+            icon.innerText = '⏳';
+            statusText.innerText = 'Pinging...';
+            statusCard.classList.add('border-yellow-500/50', 'bg-yellow-500/5');
+
+            try {
+                const start = Date.now();
+                const response = await fetch('/api/public/status');
+                const latency = Date.now() - start;
+
+                if (response.ok) {
+                    statusText.innerHTML = `<span class="text-emerald-400">Connected</span> <span class="text-xs font-normal text-white/40 ml-2">${latency}ms</span>`;
+                    statusCard.classList.remove('border-yellow-500/50', 'bg-yellow-500/5', 'border-red-500/50', 'bg-red-500/5');
+                    statusCard.classList.add('border-emerald-500/50', 'bg-emerald-500/10');
+                    text.innerText = 'Success!';
+                    icon.innerText = '✅';
+                } else {
+                    throw new Error('Server returned an error');
+                }
+            } catch (err) {
+                statusText.innerHTML = `<span class="text-red-400">Offline</span>`;
+                statusCard.classList.remove('border-yellow-500/50', 'bg-yellow-500/5', 'border-emerald-500/50', 'bg-emerald-500/10');
+                statusCard.classList.add('border-red-500/50', 'bg-red-500/10');
+                text.innerText = 'Failed';
+                icon.innerText = '❌';
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    text.innerText = 'Test Connection';
+                    icon.innerText = '⚡';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

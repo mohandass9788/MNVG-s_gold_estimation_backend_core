@@ -10,8 +10,8 @@ const options = {
         },
         servers: [
             {
-                // url: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:3000',
-                url: 'http://localhost:3000',
+                url: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:3000',
+                // url: 'http://localhost:3000',
                 description: 'API Server',
             },
         ],

@@ -5,66 +5,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'admin_fallback_secret_2026';
-const ADMIN_COOKIE = 'admin_token';
+const { requireAdmin, requireSuperAdmin, ADMIN_COOKIE, JWT_SECRET } = require('../middlewares/adminAuth');
 
-/**
- * @swagger
- * tags:
- *   name: Admin
- *   description: Admin Control Panel (HTMX UI Endpoints)
- */
 
-// ─── Middleware: Require Admin ───────────────────────────────────────────────
-// ─── Middleware: Require Admin (Any Admin) ───────────────────────────────────
-const requireAdmin = (req, res, next) => {
-    const token = req.cookies[ADMIN_COOKIE];
-    if (!token) return res.redirect('/admin/login');
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded.role !== 'super_admin' && decoded.role !== 'admin') {
-            res.clearCookie(ADMIN_COOKIE);
-            return res.redirect('/admin/login');
-        }
-        req.admin = decoded;
-        next();
-    } catch {
-        res.clearCookie(ADMIN_COOKIE);
-        res.redirect('/admin/login');
-    }
-};
-
-// ─── Middleware: Require Super Admin ──────────────────────────────────────────
-const requireSuperAdmin = (req, res, next) => {
-    const token = req.cookies[ADMIN_COOKIE];
-    if (!token) return res.redirect('/admin/login');
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded.role !== 'super_admin') {
-            return res.status(403).send('Forbidden: Super Admin access required.');
-        }
-        req.admin = decoded;
-        next();
-    } catch {
-        res.clearCookie(ADMIN_COOKIE);
-        res.redirect('/admin/login');
-    }
-};
-
-/**
- * @swagger
- * /admin/login:
- *   get:
- *     summary: Render Admin Login Page
- *     tags: [Admin]
- *     responses:
- *       200:
- *         description: HTML page for login
- */
 // ─── GET /admin/login ────────────────────────────────────────────────────────
 router.get('/login', (req, res) => {
-    if (req.cookies[ADMIN_COOKIE]) return res.redirect('/admin');
-    res.render('admin-login', { error: null });
+    const { next } = req.query;
+    if (req.cookies[ADMIN_COOKIE]) return res.redirect(next || '/admin');
+    res.render('admin-login', { error: null, next });
 });
 
 /**
@@ -86,6 +34,8 @@ router.get('/login', (req, res) => {
  *               password:
  *                 type: string
  *                 example: "Admin@123"
+ *               next:
+ *                 type: string
  *     responses:
  *       302:
  *         description: Redirect to /admin on success
@@ -94,22 +44,22 @@ router.get('/login', (req, res) => {
  */
 // ─── POST /admin/login ───────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
-    const { phone, password } = req.body;
+    const { phone, password, next } = req.body;
     try {
         const user = await prisma.user.findUnique({ where: { phone } });
         if (!user || (user.role !== 'super_admin' && user.role !== 'admin')) {
-            return res.render('admin-login', { error: 'Invalid credentials or not an admin.' });
+            return res.render('admin-login', { error: 'Invalid credentials or not an admin.', next });
         }
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) {
-            return res.render('admin-login', { error: 'Incorrect password.' });
+            return res.render('admin-login', { error: 'Incorrect password.', next });
         }
         const token = jwt.sign({ id: user.id, phone: user.phone, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
         res.cookie(ADMIN_COOKIE, token, { httpOnly: true, maxAge: 8 * 60 * 60 * 1000 });
-        res.redirect('/admin');
+        res.redirect(next || '/admin');
     } catch (e) {
         console.error(e);
-        res.render('admin-login', { error: 'Server error. Try again.' });
+        res.render('admin-login', { error: 'Server error. Try again.', next });
     }
 });
 

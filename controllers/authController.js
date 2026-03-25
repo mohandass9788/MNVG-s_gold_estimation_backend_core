@@ -330,3 +330,26 @@ exports.changePassword = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+/**
+ * Delete account and all associated data
+ */
+exports.deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Verify user exists
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Delete user record. Cascading deletes will handle related data.
+        await prisma.user.delete({ where: { id: userId } });
+
+        res.json({ message: 'Account and all associated data deleted successfully' });
+    } catch (error) {
+        console.error('Account Deletion Error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
